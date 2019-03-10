@@ -1,0 +1,52 @@
+﻿# Shows messages if errors occur, possibly other useful messages in the future
+verbose: true
+
+# Shows messages with debug information
+debug: true
+
+# The naem of the rank defined below which all players start with, set to "" to disable
+# TODO: Test without default rank
+defaultRank: default
+
+# Permissions are generally 
+permissions:
+
+    # You can set permissions using single line statements
+    admin:
+        scpermissions.test1: true
+        scpermissions.test2: true
+        scpermissions.test3: true
+
+    # You can set permissions using object groups
+    moderator:
+        scpermissions:
+            test1: true
+            test2: true
+            test3: true
+
+    # You can also mix both styles if you wish
+    donator:
+        scpermissions:
+            test1: true
+            test2: true
+        scpermissions.test3: true
+    # But you can NOT combine both styles for a single entry like this:
+    #   scpermissions.subcategory:
+    #       test: true
+    # or like this:
+    #   scpermissions:
+    #       subcategory.test: true
+
+    # You can set permissions negative to override lower roles
+    restricted:
+        scpermissions:
+            test1: false
+            test2: false
+            test3: false
+
+    # You can set a default rank which all players have, it is recommended to keep this at the bottom as any lower ranks will just be overridden otherwise
+    default:
+        scpermissions:
+            test1: true
+            test2: false
+            test3: false
