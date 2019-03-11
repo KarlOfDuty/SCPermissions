@@ -10,6 +10,7 @@ using ServerMod2.API;
 using Smod2;
 using Smod2.API;
 using Smod2.Attributes;
+using Smod2.Commands;
 using Smod2.EventHandlers;
 using Smod2.Events;
 using Smod2.Permissions;
@@ -22,7 +23,7 @@ namespace SCPermissions
         name = "SCPermissions",
         description = "A permissions system. Secure, Contain, Permit.",
         id = "karlofduty.scpermissions",
-        version = "0.1.0",
+        version = "0.2.0",
         SmodMajor = 3,
         SmodMinor = 3,
         SmodRevision = 0
@@ -36,8 +37,8 @@ namespace SCPermissions
         private JObject permissions = null;
 
         // Other config options
-        private bool verbose = false;
-        private bool debug = false;
+        public bool verbose = false;
+        public bool debug = false;
         private string defaultRank = "default";
 
         // Called by the permissions manager when any plugin checks the permissions of a player
@@ -46,7 +47,7 @@ namespace SCPermissions
             return CheckPermission(player.SteamId, permissionName);
         }
 
-        // I've split this up so I can easily provide a steamid when debugging
+        // I've split this up so I can easily provide a steamid without joining when debugging
         public short CheckPermission(string steamID, string permissionName)
         {
             this.Debug("Checking permission '" + permissionName + "' on " + steamID + ".");
@@ -170,19 +171,24 @@ namespace SCPermissions
 
         public override void OnEnable()
         {
-            // TODO: Add rank command
-            // TODO: Remove rank comamnd
-            // TODO: Reload command
+            this.AddCommand("scperms_reload", new ReloadCommand(this));
+            this.AddCommand("scperms_giverank", new GiveRankCommand(this));
+            this.AddCommand("scperms_removerank", new RemoveRankCommand(this));
+            this.AddCommand("scperms_verbose", new VerboseCommand(this));
+            this.AddCommand("scperms_debug", new DebugCommand(this));
+
+            this.AddCommand("scpermissions_reload", new ReloadCommand(this));
+            this.AddCommand("scpermissions_giverank", new GiveRankCommand(this));
+            this.AddCommand("scpermissions_removerank", new RemoveRankCommand(this));
+            this.AddCommand("scpermissions_verbose", new VerboseCommand(this));
+            this.AddCommand("scpermissions_debug", new DebugCommand(this));
 
             new Task(async () =>
             {
                 await Task.Delay(4000);
                 LoadConfig();
-                LoadPlayers();
-                if (debug)
-                {
-                    this.AddEventHandlers(new PermissionsTester(this), Priority.High);
-                }
+                LoadPlayerData();
+                this.AddEventHandlers(new PlayerJoinHandler(this), Priority.High);
                 this.Info("Special Containment Permissions loaded.");
             }).Start();
         }
@@ -230,7 +236,7 @@ namespace SCPermissions
             this.Info("Config \"" + FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/" + GetConfigString("scpermissions_config") + "\" loaded.");
         }
 
-        private void LoadPlayers()
+        private void LoadPlayerData()
         {
             if (!Directory.Exists(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions"))
             {
@@ -251,26 +257,78 @@ namespace SCPermissions
             this.Info("Player data \"" + FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/" + GetConfigString("scpermissions_playerdata") + "\" loaded.");
         }
 
-        private void Save()
+        private void SavePlayerData()
         {
             StringBuilder builder = new StringBuilder();
             foreach (KeyValuePair<string, HashSet<string>> playerRanks in playerRanks)
             {
-                builder.Append(playerRanks.Key + ": [ \"" + string.Join("\", \"", playerRanks.Value) + "\" ]\n");
+                if(playerRanks.Value.Count > 0)
+                {
+                    builder.Append(playerRanks.Key + ": [ \"" + string.Join("\", \"", playerRanks.Value) + "\" ]\n");
+                }
             }
             File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/" + GetConfigString("scpermissions_playerdata"), builder.ToString());
         }
 
-        public void Reload()
+        public bool RankIsHigherThan(string highRankSteamID, string lowRankSteamID)
         {
+            if(!playerRanks.ContainsKey(highRankSteamID))
+            {
+                return false;
+            }
 
+            if(!playerRanks.ContainsKey(lowRankSteamID))
+            {
+                return true;
+            }
+
+            JProperty[] ranks = permissions.Properties().ToArray();
+            foreach (JProperty rankProperty in ranks)
+            {
+                // If this rank is found first 
+                if (playerRanks[lowRankSteamID].Contains(rankProperty.Name))
+                {
+                    return false;
+                }
+                else if (playerRanks[highRankSteamID].Contains(rankProperty.Name))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool RankExists(string rank)
+        {
+            JProperty[] ranks = permissions.Properties().ToArray();
+            foreach (JProperty rankProperty in ranks)
+            {
+                if(rank == rankProperty.Name)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public bool GiveRank(string steamID, string rank)
         {
-            if(playerRanks.ContainsKey(steamID))
+            if(!RankExists(rank))
             {
-                return playerRanks[steamID].Add(rank);
+                return false;
+            }
+
+            if(!playerRanks.ContainsKey(steamID))
+            {
+                playerRanks.Add(steamID, new HashSet<string>(new string[]{ rank }));
+                SavePlayerData();
+                RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
+                return true;
+            }
+            else if (playerRanks[steamID].Add(rank))
+            {
+                SavePlayerData();
+                return true;
             }
             return false;
         }
@@ -279,9 +337,71 @@ namespace SCPermissions
         {
             if (playerRanks.ContainsKey(steamID))
             {
-                return playerRanks[steamID].Remove(rank);
+                if (playerRanks[steamID].Remove(rank))
+                {
+                    SavePlayerData();
+                    RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
+                    return true;
+                }
             }
             return false;
+        }
+
+        public void RefreshVanillaRank(Player player)
+        {
+            if(player == null)
+            {
+                return;
+            }
+
+            if (playerRanks.ContainsKey(player.SteamId))
+            {
+                this.Debug("Ranks: " + string.Join(", ", playerRanks[player.SteamId]));
+
+                // Check every rank from the rank system in the order they are registered in the config until a vanillarank entry is found
+                JProperty[] ranks = permissions.Properties().ToArray();
+                foreach (JProperty rankProperty in ranks)
+                {
+                    // Check if the player has the rank
+                    if ((playerRanks[player.SteamId].Contains(rankProperty.Name) || rankProperty.Name == defaultRank))
+                    {
+                        try
+                        {
+                            // Checks if the rank has a vanillarank entry
+                            string vanillarank = permissions.SelectToken(rankProperty.Name + ".vanillarank")?.Value<string>();
+                            if (vanillarank != null)
+                            {
+                                player.SetRank(null, null, vanillarank);
+                                this.Debug("Set vanilla rank for " + player.Name + " to " + rankProperty.Name);
+                                return;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            this.Verbose("Error attempting to parse vanilla rank entry of rank " + rankProperty.Name + ": " + e.Message);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Checks only the default rank as the player was not registered
+                try
+                {
+                    // Checks if the rank has a vanillarank entry
+                    string vanillarank = permissions.SelectToken(defaultRank + ".vanillarank")?.Value<string>();
+                    if (vanillarank != null)
+                    {
+                        player.SetRank(null, null, vanillarank);
+                        this.Debug("Set vanilla rank for " + player.Name + " to " + defaultRank);
+                        return;
+                    }
+                }
+                catch (Exception e)
+                {
+                    this.Verbose("Error attempting to parse vanilla rank entry of rank " + defaultRank + ": " + e.Message);
+                }
+            }
         }
 
         public new void Debug(string message)
@@ -299,20 +419,256 @@ namespace SCPermissions
                 this.Info(message);
             }
         }
+
+        /////////////////////////////////
+        // Commands
+        ////////////////////////////////
+        private class ReloadCommand : ICommandHandler
+        {
+            private SCPermissions plugin;
+
+            public ReloadCommand(SCPermissions plugin)
+            {
+                this.plugin = plugin;
+            }
+
+            public string GetCommandDescription()
+            {
+                return "Reloads the config abnd player data.";
+            }
+
+            public string GetUsage()
+            {
+                return "scperm_reload";
+            }
+
+            public string[] OnCall(ICommandSender sender, string[] args)
+            {
+                if (sender is Player)
+                {
+                    if (!((Player)sender).HasPermission("scpermissions.reload"))
+                    {
+                        return new string[] { "You don't have permission to use that command." };
+                    }
+                }
+
+                plugin.Info("Reloading plugin...");
+                plugin.LoadConfig();
+                plugin.LoadPlayerData();
+                return new string[] { "Reload complete." };
+            }
+        }
+
+        private class GiveRankCommand : ICommandHandler
+        {
+            private SCPermissions plugin;
+
+            public GiveRankCommand(SCPermissions plugin)
+            {
+                this.plugin = plugin;
+            }
+
+            public string GetCommandDescription()
+            {
+                return "Gives a rank to a player.";
+            }
+
+            public string GetUsage()
+            {
+                return "scperm_giverank <rank> <steamid>";
+            }
+
+            public string[] OnCall(ICommandSender sender, string[] args)
+            {
+                if (args.Length > 1)
+                {
+                    if (sender is Player player)
+                    {
+                        if (!player.HasPermission("scpermissions.giverank"))
+                        {
+                            return new string[] { "You don't have permission to use that command." };
+                        }
+
+                        if(!plugin.RankIsHigherThan(player.SteamId, args[1]))
+                        {
+                            return new string[] { "You are not allowed to edit players with ranks equal or above your own." };
+                        }
+                    }
+
+                    if (plugin.GiveRank(args[1], args[0]))
+                    {
+                        return new string[] { "Added the rank " + args[0] + " to " + args[1] + "." };
+                    }
+                    else
+                    {
+                        return new string[] { "Could not add that rank. Does the rank not exist or does the player already have it?" };
+                    }
+
+                }
+                else
+                {
+                    return new string[] { "Not enough arguments." };
+                }
+            }
+        }
+
+        private class RemoveRankCommand : ICommandHandler
+        {
+            private SCPermissions plugin;
+
+            public RemoveRankCommand(SCPermissions plugin)
+            {
+                this.plugin = plugin;
+            }
+
+            public string GetCommandDescription()
+            {
+                return "Revokes a rank from a player.";
+            }
+
+            public string GetUsage()
+            {
+                return "scperm_removerank <rank> <steamid>";
+            }
+
+            public string[] OnCall(ICommandSender sender, string[] args)
+            {
+                if (args.Length > 1)
+                {
+                    if (sender is Player player)
+                    {
+                        if (!player.HasPermission("scpermissions.removerank"))
+                        {
+                            return new string[] { "You don't have permission to use that command." };
+                        }
+
+                        if (!plugin.RankIsHigherThan(player.SteamId, args[1]))
+                        {
+                            return new string[] { "You are not allowed to edit players with ranks equal or above your own." };
+                        }
+                    }
+
+                    if (plugin.RemoveRank(args[1], args[0]))
+                    {
+                        return new string[] { "Removed the rank " + args[0] + " from " + args[1] + "." };
+                    }
+                    else
+                    {
+                        return new string[] { "Could not remove that rank. Does the player not have it?" };
+                    }
+
+                }
+                else
+                {
+                    return new string[] { "Not enough arguments." };
+                }
+            }
+        }
+
+        private class VerboseCommand : ICommandHandler
+        {
+            private SCPermissions plugin;
+
+            public VerboseCommand(SCPermissions plugin)
+            {
+                this.plugin = plugin;
+            }
+
+            public string GetCommandDescription()
+            {
+                return "Toggles verbose messages.";
+            }
+
+            public string GetUsage()
+            {
+                return "scperm_verbose";
+            }
+
+            public string[] OnCall(ICommandSender sender, string[] args)
+            {
+                if (sender is Player)
+                {
+                    if (!((Player)sender).HasPermission("scpermissions.verbose"))
+                    {
+                        return new string[] { "You don't have permission to use that command." };
+                    }
+                }
+
+                plugin.verbose = !plugin.verbose;
+                return new string[] { "Verbose messages: " + plugin.verbose };
+            }
+        }
+
+        private class DebugCommand : ICommandHandler
+        {
+            private SCPermissions plugin;
+
+            public DebugCommand(SCPermissions plugin)
+            {
+                this.plugin = plugin;
+            }
+
+            public string GetCommandDescription()
+            {
+                return "Toggles debug messages.";
+            }
+
+            public string GetUsage()
+            {
+                return "scperm_debug";
+            }
+
+            public string[] OnCall(ICommandSender sender, string[] args)
+            {
+                if (sender is Player)
+                {
+                    if (!((Player)sender).HasPermission("scpermissions.debug"))
+                    {
+                        return new string[] { "You don't have permission to use that command." };
+                    }
+                }
+
+                plugin.debug = !plugin.debug;
+                return new string[] { "Debug messages: " + plugin.debug };
+            }
+        }
     }
 
-    internal class PermissionsTester : IEventHandlerSpawn
+    internal class PlayerJoinHandler : IEventHandlerPlayerJoin
     {
         private SCPermissions plugin;
 
-        public PermissionsTester(SCPermissions plugin)
+        public PlayerJoinHandler(SCPermissions plugin)
         {
             this.plugin = plugin;
         }
 
-        public void OnSpawn(PlayerSpawnEvent ev)
+        public void OnPlayerJoin(PlayerJoinEvent ev)
         {
-            if(ev.Player.HasPermission("scpermissions.test1"))
+            try
+            {
+                new Task(() =>
+                {
+                    TestPerms(ev);
+                    plugin.RefreshVanillaRank(ev.Player);
+
+                }).Start();
+            }
+            catch (Exception e)
+            {
+                plugin.Verbose(e.ToString());
+            }
+        }
+
+        // Will be removed in version 1.0.0
+        private void TestPerms(PlayerJoinEvent ev)
+        {
+            if(!plugin.debug)
+            {
+                return;
+            }
+
+            if (ev.Player.HasPermission("scpermissions.test1"))
             {
                 plugin.Info(ev.Player.Name + " has the test permission.");
             }

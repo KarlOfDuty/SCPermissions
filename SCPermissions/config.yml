@@ -5,7 +5,6 @@ verbose: true
 debug: true
 
 # The naem of the rank defined below which all players start with, set to "" to disable
-# TODO: Test without default rank
 defaultRank: default
 
 # Permissions are generally 
@@ -13,12 +12,18 @@ permissions:
 
     # You can set permissions using single line statements
     admin:
+        vanillarank: admin
         scpermissions.test1: true
         scpermissions.test2: true
         scpermissions.test3: true
-
+        scpermissions.reload: true
+        scpermissions.giverank: true
+        scpermissions.removerank: true
+        scpermissions.verbose: true
+        scpermissions.debug: true
     # You can set permissions using object groups
     moderator:
+        vanillarank: moderator
         scpermissions:
             test1: true
             test2: true
@@ -26,6 +31,7 @@ permissions:
 
     # You can also mix both styles if you wish
     donator:
+        vanillarank: donator
         scpermissions:
             test1: true
             test2: true
@@ -39,6 +45,7 @@ permissions:
 
     # You can set permissions negative to override lower roles
     restricted:
+        vanillarank: restricted
         scpermissions:
             test1: false
             test2: false
@@ -46,6 +53,7 @@ permissions:
 
     # You can set a default rank which all players have, it is recommended to keep this at the bottom as any lower ranks will just be overridden otherwise
     default:
+        vanillarank: player
         scpermissions:
             test1: true
             test2: false
