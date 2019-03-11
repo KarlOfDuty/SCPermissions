@@ -444,9 +444,9 @@ namespace SCPermissions
 
             public string[] OnCall(ICommandSender sender, string[] args)
             {
-                if (sender is Player)
+                if (sender is Player player)
                 {
-                    if (!((Player)sender).HasPermission("scpermissions.reload"))
+                    if (!player.HasPermission("scpermissions.reload"))
                     {
                         return new string[] { "You don't have permission to use that command." };
                     }
@@ -586,9 +586,9 @@ namespace SCPermissions
 
             public string[] OnCall(ICommandSender sender, string[] args)
             {
-                if (sender is Player)
+                if (sender is Player player)
                 {
-                    if (!((Player)sender).HasPermission("scpermissions.verbose"))
+                    if (!player.HasPermission("scpermissions.verbose"))
                     {
                         return new string[] { "You don't have permission to use that command." };
                     }
@@ -620,9 +620,9 @@ namespace SCPermissions
 
             public string[] OnCall(ICommandSender sender, string[] args)
             {
-                if (sender is Player)
+                if (sender is Player player)
                 {
-                    if (!((Player)sender).HasPermission("scpermissions.debug"))
+                    if (!player.HasPermission("scpermissions.debug"))
                     {
                         return new string[] { "You don't have permission to use that command." };
                     }
