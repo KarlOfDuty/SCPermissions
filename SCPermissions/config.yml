@@ -2,7 +2,7 @@
 verbose: true
 
 # Shows messages with debug information
-debug: true
+debug: false
 
 # The naem of the rank defined below which all players start with, set to "" to disable
 defaultRank: default
