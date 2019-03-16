@@ -11,6 +11,7 @@ using Smod2;
 using Smod2.API;
 using Smod2.Attributes;
 using Smod2.Commands;
+using Smod2.Config;
 using Smod2.EventHandlers;
 using Smod2.Events;
 using Smod2.Permissions;
@@ -195,11 +196,11 @@ namespace SCPermissions
 
         public override void Register()
         {
-            AddPermissionsHandler(this);
-            this.AddConfig(new Smod2.Config.ConfigSetting("scpermissions_config", "config.yml", Smod2.Config.SettingType.STRING, true, "Name of the config file to use, by default 'config.yml'"));
-            this.AddConfig(new Smod2.Config.ConfigSetting("scpermissions_config_global", true, Smod2.Config.SettingType.BOOL, true, "Whether or not the config should be placed in the global config directory, by default true."));
-            this.AddConfig(new Smod2.Config.ConfigSetting("scpermissions_playerdata", "players.yml", Smod2.Config.SettingType.STRING, true, "Name of the player data file to use, by default 'players.yml'"));
-            this.AddConfig(new Smod2.Config.ConfigSetting("scpermissions_playerdata_global", true, Smod2.Config.SettingType.BOOL, true, "Whether or not the player data file should be placed in the global config directory, by default true."));
+            RegisterPermissionsHandler(this);
+            this.AddConfig(new ConfigSetting("scpermissions_config", "config.yml", true, "Name of the config file to use, by default 'config.yml'"));
+            this.AddConfig(new ConfigSetting("scpermissions_config_global", true, true, "Whether or not the config should be placed in the global config directory, by default true."));
+            this.AddConfig(new ConfigSetting("scpermissions_playerdata", "players.yml", true, "Name of the player data file to use, by default 'players.yml'"));
+            this.AddConfig(new ConfigSetting("scpermissions_playerdata_global", true, true, "Whether or not the player data file should be placed in the global config directory, by default true."));
         }
 
         private void LoadConfig()
