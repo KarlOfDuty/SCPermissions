@@ -197,9 +197,7 @@ namespace SCPermissions
         public override void Register()
         {
             RegisterPermissionsHandler(this);
-            this.AddConfig(new ConfigSetting("scpermissions_config", "config.yml", true, "Name of the config file to use, by default 'config.yml'"));
             this.AddConfig(new ConfigSetting("scpermissions_config_global", true, true, "Whether or not the config should be placed in the global config directory, by default true."));
-            this.AddConfig(new ConfigSetting("scpermissions_playerdata", "players.yml", true, "Name of the player data file to use, by default 'players.yml'"));
             this.AddConfig(new ConfigSetting("scpermissions_playerdata_global", true, true, "Whether or not the player data file should be placed in the global config directory, by default true."));
         }
 
@@ -210,13 +208,13 @@ namespace SCPermissions
                 Directory.CreateDirectory(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions");
             }
 
-            if (!File.Exists(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/" + GetConfigString("scpermissions_config")))
+            if (!File.Exists(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/config.yml"))
             {
-                File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/" + GetConfigString("scpermissions_config"), Encoding.UTF8.GetString(Resources.config));
+                File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/config.yml", Encoding.UTF8.GetString(Resources.config));
             }
 
             // Reads config contents into FileStream
-            FileStream stream = File.OpenRead(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/" + GetConfigString("scpermissions_config"));
+            FileStream stream = File.OpenRead(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/config.yml");
 
             // Converts the FileStream into a YAML Dictionary object
             IDeserializer deserializer = new DeserializerBuilder().Build();
@@ -234,7 +232,7 @@ namespace SCPermissions
             defaultRank = json.SelectToken("defaultRank").Value<string>();
 
             this.Debug("JSON Actual: " + jsonString);
-            this.Info("Config \"" + FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/" + GetConfigString("scpermissions_config") + "\" loaded.");
+            this.Info("Config \"" + FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/config.yml\" loaded.");
         }
 
         private void LoadPlayerData()
@@ -243,19 +241,19 @@ namespace SCPermissions
             {
                 Directory.CreateDirectory(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions");
             }
-            if (!File.Exists(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/" + GetConfigString("scpermissions_playerdata")))
+            if (!File.Exists(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/playerdata.yml"))
             {
-                File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/" + GetConfigString("scpermissions_playerdata"), Encoding.UTF8.GetString(Resources.players));
+                File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/playerdata.yml", Encoding.UTF8.GetString(Resources.players));
             }
 
             // Reads config contents into FileStream
-            FileStream stream = File.OpenRead(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/" + GetConfigString("scpermissions_playerdata"));
+            FileStream stream = File.OpenRead(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/playerdata.yml");
 
             // Converts the FileStream into a YAML Dictionary object
             IDeserializer deserializer = new DeserializerBuilder().Build();
             playerRanks = deserializer.Deserialize<Dictionary<string, HashSet<string>>>(new StreamReader(stream));
 
-            this.Info("Player data \"" + FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/" + GetConfigString("scpermissions_playerdata") + "\" loaded.");
+            this.Info("Player data \"" + FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/playerdata.yml\" loaded.");
         }
 
         private void SavePlayerData()
@@ -268,7 +266,7 @@ namespace SCPermissions
                     builder.Append(playerRanks.Key + ": [ \"" + string.Join("\", \"", playerRanks.Value) + "\" ]\n");
                 }
             }
-            File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/" + GetConfigString("scpermissions_playerdata"), builder.ToString());
+            File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/playerdata.yml", builder.ToString());
         }
 
         public bool RankIsHigherThan(string highRankSteamID, string lowRankSteamID)
@@ -440,7 +438,7 @@ namespace SCPermissions
 
             public string GetUsage()
             {
-                return "scperm_reload";
+                return "scperms_reload";
             }
 
             public string[] OnCall(ICommandSender sender, string[] args)
@@ -476,7 +474,7 @@ namespace SCPermissions
 
             public string GetUsage()
             {
-                return "scperm_giverank <rank> <steamid>";
+                return "scperms_giverank <rank> <steamid>";
             }
 
             public string[] OnCall(ICommandSender sender, string[] args)
@@ -529,7 +527,7 @@ namespace SCPermissions
 
             public string GetUsage()
             {
-                return "scperm_removerank <rank> <steamid>";
+                return "scperms_removerank <rank> <steamid>";
             }
 
             public string[] OnCall(ICommandSender sender, string[] args)
@@ -582,7 +580,7 @@ namespace SCPermissions
 
             public string GetUsage()
             {
-                return "scperm_verbose";
+                return "scperms_verbose";
             }
 
             public string[] OnCall(ICommandSender sender, string[] args)
@@ -616,7 +614,7 @@ namespace SCPermissions
 
             public string GetUsage()
             {
-                return "scperm_debug";
+                return "scperms_debug";
             }
 
             public string[] OnCall(ICommandSender sender, string[] args)
