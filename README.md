@@ -1,5 +1,5 @@
 # SCPermissions
-A permissions plugin for Smod/SCP:SL. Requires Smod version 3.3.1+.
+A permissions plugin for Smod/SCP:SL. Requires Smod version 3.4.0+.
 
 # Config
 
@@ -69,7 +69,6 @@ permissions:
 
     # You can set a default rank which all players have, it is recommended to keep this at the bottom as any lower ranks will just be overridden otherwise
     default:
-        vanillarank: player
         scpermissions:
             test1: true
             test2: false
