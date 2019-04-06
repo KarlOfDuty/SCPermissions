@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -26,7 +26,7 @@ namespace SCPermissions
         id = "karlofduty.scpermissions",
         version = "0.3.0",
         SmodMajor = 3,
-        SmodMinor = 3,
+        SmodMinor = 4,
         SmodRevision = 0
     )]
     public class SCPermissions : Plugin, IPermissionsHandler
