@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,6 +15,7 @@ using Smod2.Config;
 using Smod2.EventHandlers;
 using Smod2.Events;
 using Smod2.Permissions;
+using Smod2.Piping;
 using YamlDotNet.Serialization;
 
 namespace SCPermissions
@@ -32,15 +33,37 @@ namespace SCPermissions
     public class SCPermissions : Plugin, IPermissionsHandler
     {
         // Contains all registered players steamid and list of the ranks they have
-        private Dictionary<string, HashSet<string>> playerRanks = new Dictionary<string, HashSet<string>>();
+        private Dictionary<string, HashSet<string>> playerRankDict = new Dictionary<string, HashSet<string>>();
 
-        // A json object representing the permissions section in the config
-        private JObject permissions = null;
+		// Same as above but is not saved to file
+		private Dictionary<string, HashSet<string>> tempPlayerRankDict = new Dictionary<string, HashSet<string>>();
+
+		// A json object representing the permissions section in the config
+		private JObject permissions = null;
 
         // Other config options
         public bool verbose = false;
         public bool debug = false;
         private string defaultRank = "default";
+
+		private HashSet<string> GetPlayerRanks(string steamID)
+		{
+			HashSet<string> ranks = new HashSet<string>();
+			if (playerRankDict.ContainsKey(steamID))
+			{
+				ranks.UnionWith(playerRankDict[steamID]);
+			}
+			else if (tempPlayerRankDict.ContainsKey(steamID))
+			{
+				ranks.UnionWith(tempPlayerRankDict[steamID]);
+			}
+
+			if(defaultRank != "")
+			{
+				ranks.Add(defaultRank);
+			}
+			return ranks;
+		}
 
         // Called by the permissions manager when any plugin checks the permissions of a player
         public short CheckPermission(Player player, string permissionName)
@@ -59,105 +82,59 @@ namespace SCPermissions
                 return 0;
             }
 
-            // Check if player is registered in the rank system
-            if (playerRanks.ContainsKey(steamID))
+			HashSet<string> playerRanks = GetPlayerRanks(steamID);
+
+            // Check if player has any ranks
+            if (playerRanks.Count > 0)
             {
-                this.Debug("Ranks: " + string.Join(", ", playerRanks[steamID]));
+                this.Debug("Ranks: " + string.Join(", ", playerRanks));
                 // Check every rank from the rank system in the order they are registered in the config until an instance of the permission is found
-                JProperty[] ranks = permissions.Properties().ToArray();
-                foreach (JProperty rankProperty in ranks)
+                JProperty[] allRanks = permissions.Properties().ToArray();
+                foreach (JProperty rank in allRanks)
                 {
                     // Check if the player has the rank
-                    if ((playerRanks[steamID].Contains(rankProperty.Name) || rankProperty.Name == defaultRank))
+                    if (playerRanks.Contains(rank.Name) || rank.Name == defaultRank)
                     {
                         try
                         {
                             // Checks if the rank has this permission listed single line format
-                            JToken singleLiner = permissions.SelectToken(rankProperty.Name + "['" + permissionName + "']");
+                            JToken singleLiner = permissions.SelectToken(rank.Name + "['" + permissionName + "']");
                             if (singleLiner != null)
                             {
                                 // Returns 1 if permission is allowed, returns -1 if permission is forbidden
                                 if (singleLiner.Value<bool>())
                                 {
-                                    this.Debug("Returned singleline 1 for " + rankProperty.Name);
+                                    this.Debug("Returned singleline 1 for " + rank.Name);
                                     return 1;
                                 }
                                 else
                                 {
-                                    this.Debug("Returned singleline -1 for " + rankProperty.Name);
+                                    this.Debug("Returned singleline -1 for " + rank.Name);
                                     return -1;
                                 }
                             }
 
                             // Checks if the rank has this permission listed in multiline format
-                            JToken multiLiner = permissions.SelectToken(rankProperty.Name + "." + permissionName);
+                            JToken multiLiner = permissions.SelectToken(rank.Name + "." + permissionName);
                             if (multiLiner != null)
                             {
                                 // Returns 1 if permission is allowed, returns -1 if permission is forbidden
                                 if (multiLiner.Value<bool>())
                                 {
-                                    this.Debug("Returned multiline 1 for " + rankProperty.Name);
+                                    this.Debug("Returned multiline 1 for " + rank.Name);
                                     return 1;
                                 }
                                 else
                                 {
-                                    this.Debug("Returned multiline -1 for " + rankProperty.Name);
+                                    this.Debug("Returned multiline -1 for " + rank.Name);
                                     return -1;
                                 }
                             }
                         }
                         catch (Exception e)
                         {
-                            this.Verbose("Error attempting to parse permission node " + permissionName + " in rank " + rankProperty.Name + ": " + e.Message);
+                            this.Verbose("Error attempting to parse permission node " + permissionName + " in rank " + rank.Name + ": " + e.Message);
                         }
-                    }
-                }
-            }
-            else
-            {
-                // Checks only the default rank as the player was not registered
-                JToken permissionNode = permissions.SelectToken(defaultRank + "." + permissionName);
-                if (permissionNode != null)
-                {
-                    try
-                    {
-                        // Checks if the rank has this permission listed single line format
-                        JToken singleLiner = permissions.SelectToken(defaultRank + "['" + permissionName + "']");
-                        if (singleLiner != null)
-                        {
-                            // Returns 1 if permission is allowed, returns -1 if permission is forbidden
-                            if (singleLiner.Value<bool>())
-                            {
-                                this.Debug("Returned singleline 1 for default rank " + defaultRank);
-                                return 1;
-                            }
-                            else
-                            {
-                                this.Debug("Returned singleline -1 for default rank " + defaultRank);
-                                return -1;
-                            }
-                        }
-
-                        // Checks if the rank has this permission listed in multiline format
-                        JToken multiLiner = permissions.SelectToken(defaultRank + "." + permissionName);
-                        if (multiLiner != null)
-                        {
-                            // Returns 1 if permission is allowed, returns -1 if permission is forbidden
-                            if (multiLiner.Value<bool>())
-                            {
-                                this.Debug("Returned multiline 1 for default rank " + defaultRank);
-                                return 1;
-                            }
-                            else
-                            {
-                                this.Debug("Returned multiline -1 for default rank " + defaultRank);
-                                return -1;
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        this.Verbose("Error attempting to parse permission node " + permissionName + " in rank " + defaultRank + ": " + e.Message);
                     }
                 }
             }
@@ -190,31 +167,35 @@ namespace SCPermissions
                 LoadConfig();
                 LoadPlayerData();
                 this.AddEventHandlers(new PlayerJoinHandler(this), Priority.High);
-                this.Info("Special Containment Permissions loaded.");
+				this.Info("Special Containment Permissions loaded.");
             }).Start();
         }
+
 
         public override void Register()
         {
             RegisterPermissionsHandler(this);
-            this.AddConfig(new ConfigSetting("scpermissions_config_global", true, true, "Whether or not the config should be placed in the global config directory, by default true."));
-            this.AddConfig(new ConfigSetting("scpermissions_playerdata_global", true, true, "Whether or not the player data file should be placed in the global config directory, by default true."));
+            this.AddConfig(new ConfigSetting("scperms_config_global", true, true, "Whether or not the config should be placed in the global config directory, by default true."));
+            this.AddConfig(new ConfigSetting("scperms_playerdata_global", true, true, "Whether or not the player data file should be placed in the global config directory, by default true."));
         }
 
+		/// <summary>
+		/// Loads the plugin config
+		/// </summary>
         private void LoadConfig()
         {
-            if (!Directory.Exists(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions"))
+            if (!Directory.Exists(FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions"))
             {
-                Directory.CreateDirectory(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions");
+                Directory.CreateDirectory(FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions");
             }
 
-            if (!File.Exists(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/config.yml"))
+            if (!File.Exists(FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml"))
             {
-                File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/config.yml", Encoding.UTF8.GetString(Resources.config));
+                File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml", Encoding.UTF8.GetString(Resources.config));
             }
 
             // Reads config contents into FileStream
-            FileStream stream = File.OpenRead(FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/config.yml");
+            FileStream stream = File.OpenRead(FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml");
 
             // Converts the FileStream into a YAML Dictionary object
             IDeserializer deserializer = new DeserializerBuilder().Build();
@@ -232,51 +213,66 @@ namespace SCPermissions
             defaultRank = json.SelectToken("defaultRank").Value<string>();
 
             this.Debug("JSON Actual: " + jsonString);
-            this.Info("Config \"" + FileManager.GetAppFolder(GetConfigBool("scpermissions_config_global")) + "SCPermissions/config.yml\" loaded.");
+            this.Info("Config \"" + FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml\" loaded.");
         }
 
+		/// <summary>
+		/// Loads player data
+		/// </summary>
         private void LoadPlayerData()
         {
-            if (!Directory.Exists(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions"))
+            if (!Directory.Exists(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions"))
             {
-                Directory.CreateDirectory(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions");
+                Directory.CreateDirectory(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions");
             }
-            if (!File.Exists(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/playerdata.yml"))
+            if (!File.Exists(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml"))
             {
-                File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/playerdata.yml", Encoding.UTF8.GetString(Resources.players));
+                File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml", Encoding.UTF8.GetString(Resources.players));
             }
 
             // Reads config contents into FileStream
-            FileStream stream = File.OpenRead(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/playerdata.yml");
+            FileStream stream = File.OpenRead(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml");
 
             // Converts the FileStream into a YAML Dictionary object
             IDeserializer deserializer = new DeserializerBuilder().Build();
-            playerRanks = deserializer.Deserialize<Dictionary<string, HashSet<string>>>(new StreamReader(stream));
+            playerRankDict = deserializer.Deserialize<Dictionary<string, HashSet<string>>>(new StreamReader(stream));
 
-            this.Info("Player data \"" + FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/playerdata.yml\" loaded.");
+            this.Info("Player data \"" + FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml\" loaded.");
         }
 
+		/// <summary>
+		/// Saves player data to file
+		/// </summary>
         private void SavePlayerData()
         {
             StringBuilder builder = new StringBuilder();
-            foreach (KeyValuePair<string, HashSet<string>> playerRanks in playerRanks)
+            foreach (KeyValuePair<string, HashSet<string>> playerRanks in playerRankDict)
             {
                 if(playerRanks.Value.Count > 0)
                 {
                     builder.Append(playerRanks.Key + ": [ \"" + string.Join("\", \"", playerRanks.Value) + "\" ]\n");
                 }
             }
-            File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scpermissions_playerdata_global")) + "SCPermissions/playerdata.yml", builder.ToString());
+            File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml", builder.ToString());
         }
 
-        public bool RankIsHigherThan(string highRankSteamID, string lowRankSteamID)
+		/// <summary>
+		/// Checks if the first player has a higher rank than the second.
+		/// </summary>
+		/// <param name="highRankSteamID">SteamID of the player assumed to have the higher rank.</param>
+		/// <param name="lowRankSteamID">SteamID of the player assumed to have the lower rank.</param>
+		/// <returns></returns>
+        private bool RankIsHigherThan(string highRankSteamID, string lowRankSteamID)
         {
-            if(!playerRanks.ContainsKey(highRankSteamID))
+			HashSet<string> highPlayerRanks = GetPlayerRanks(highRankSteamID);
+			HashSet<string> lowPlayerRanks = GetPlayerRanks(lowRankSteamID);
+
+			if (highPlayerRanks.Count == 0)
             {
                 return false;
             }
 
-            if(!playerRanks.ContainsKey(lowRankSteamID))
+            if(lowPlayerRanks.Count == 0)
             {
                 return true;
             }
@@ -284,12 +280,12 @@ namespace SCPermissions
             JProperty[] ranks = permissions.Properties().ToArray();
             foreach (JProperty rankProperty in ranks)
             {
-                // If this rank is found first 
-                if (playerRanks[lowRankSteamID].Contains(rankProperty.Name))
+                // If this rank is found first it is either higher in rank or equal to the other player, so returns false
+                if (lowPlayerRanks.Contains(rankProperty.Name))
                 {
                     return false;
                 }
-                else if (playerRanks[highRankSteamID].Contains(rankProperty.Name))
+                else if (highPlayerRanks.Contains(rankProperty.Name))
                 {
                     return true;
                 }
@@ -297,6 +293,11 @@ namespace SCPermissions
             return false;
         }
 
+		/// <summary>
+		/// Checks if a rank of this name is registered in the config.
+		/// </summary>
+		/// <param name="rank">The rank to check.</param>
+		/// <returns></returns>
         public bool RankExists(string rank)
         {
             JProperty[] ranks = permissions.Properties().ToArray();
@@ -310,6 +311,13 @@ namespace SCPermissions
             return false;
         }
 
+		/// <summary>
+		/// Gives a rank to a player, refreshes their vanilla rank and saves all players ranks to file
+		/// </summary>
+		/// <param name="steamID">SteamID of the player.</param>
+		/// <param name="rank">Rank to grant.</param>
+		/// <returns></returns>
+		[PipeMethod]
         public bool GiveRank(string steamID, string rank)
         {
             if(!RankExists(rank))
@@ -317,26 +325,53 @@ namespace SCPermissions
                 return false;
             }
 
-            if(!playerRanks.ContainsKey(steamID))
+            if(!playerRankDict.ContainsKey(steamID))
             {
-                playerRanks.Add(steamID, new HashSet<string>(new string[]{ rank }));
-                SavePlayerData();
-                RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
-                return true;
+                playerRankDict.Add(steamID, new HashSet<string>());
             }
-            else if (playerRanks[steamID].Add(rank))
-            {
-                SavePlayerData();
-                return true;
-            }
-            return false;
+
+			playerRankDict[steamID].Add(rank);
+			SavePlayerData();
+            RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
+            return true;
         }
 
-        public bool RemoveRank(string steamID, string rank)
+		/// <summary>
+		/// Gives a temporary rank to a player which is not saved to file and refreshes the vanilla rank
+		/// </summary>
+		/// <param name="steamID">SteamID of the player.</param>
+		/// <param name="rank">Rank to grant.</param>
+		/// <returns></returns>
+		[PipeMethod]
+		public bool GiveTempRank(string steamID, string rank)
+		{
+			if (!RankExists(rank))
+			{
+				return false;
+			}
+
+			if (!tempPlayerRankDict.ContainsKey(steamID))
+			{
+				tempPlayerRankDict.Add(steamID, new HashSet<string>());
+			}
+
+			tempPlayerRankDict[steamID].Add(rank);
+			RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
+			return true;
+		}
+
+		/// <summary>
+		/// Removes a rank from a player.
+		/// </summary>
+		/// <param name="steamID">SteamID of the player.</param>
+		/// <param name="rank">Rank to remove.</param>
+		/// <returns></returns>
+		[PipeMethod]
+		public bool RemoveRank(string steamID, string rank)
         {
-            if (playerRanks.ContainsKey(steamID))
+            if (playerRankDict.ContainsKey(steamID))
             {
-                if (playerRanks[steamID].Remove(rank))
+                if (playerRankDict[steamID].Remove(rank))
                 {
                     SavePlayerData();
                     RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
@@ -346,23 +381,51 @@ namespace SCPermissions
             return false;
         }
 
-        public void RefreshVanillaRank(Player player)
+		/// <summary>
+		/// Removes a temp rank from a player.
+		/// </summary>
+		/// <param name="steamID">SteamID of the player.</param>
+		/// <param name="rank">Rank to remove.</param>
+		/// <returns></returns>
+		[PipeMethod]
+		public bool RemoveTempRank(string steamID, string rank)
+		{
+			if (tempPlayerRankDict.ContainsKey(steamID))
+			{
+				if (tempPlayerRankDict[steamID].Remove(rank))
+				{
+					SavePlayerData();
+					RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/// <summary>
+		/// Checks if the player should be given any vanilla rank and sets it.
+		/// </summary>
+		/// <param name="player"></param>
+		public void RefreshVanillaRank(Player player)
         {
             if(player == null)
             {
                 return;
             }
 
-            if (playerRanks.ContainsKey(player.SteamId))
+			this.Debug("Refreshing vanilla ranks for: " + player.Name);
+
+			HashSet<string> playerRanks = GetPlayerRanks(player.SteamId);
+            if (playerRanks.Count > 0)
             {
-                this.Debug("Ranks: " + string.Join(", ", playerRanks[player.SteamId]));
+                this.Debug("Ranks: " + string.Join(", ", playerRanks));
 
                 // Check every rank from the rank system in the order they are registered in the config until a vanillarank entry is found
                 JProperty[] ranks = permissions.Properties().ToArray();
                 foreach (JProperty rankProperty in ranks)
                 {
                     // Check if the player has the rank
-                    if ((playerRanks[player.SteamId].Contains(rankProperty.Name) || rankProperty.Name == defaultRank))
+                    if (playerRanks.Contains(rankProperty.Name) || rankProperty.Name == defaultRank)
                     {
                         try
                         {
@@ -382,27 +445,12 @@ namespace SCPermissions
                     }
                 }
             }
-            else
-            {
-                // Checks only the default rank as the player was not registered
-                try
-                {
-                    // Checks if the rank has a vanillarank entry
-                    string vanillarank = permissions.SelectToken(defaultRank + ".vanillarank")?.Value<string>();
-                    if (vanillarank != null)
-                    {
-                        player.SetRank(null, null, vanillarank);
-                        this.Debug("Set vanilla rank for " + player.Name + " to " + defaultRank);
-                        return;
-                    }
-                }
-                catch (Exception e)
-                {
-                    this.Verbose("Error attempting to parse vanilla rank entry of rank " + defaultRank + ": " + e.Message);
-                }
-            }
         }
 
+		/// <summary>
+		/// Logs to console if debug mode is on.
+		/// </summary>
+		/// <param name="message">Message to send.</param>
         public new void Debug(string message)
         {
             if(debug)
@@ -411,6 +459,10 @@ namespace SCPermissions
             }
         }
 
+		/// <summary>
+		/// Logs to console if verbose is on.
+		/// </summary>
+		/// <param name="message">Message to send.</param>
         public void Verbose(string message)
         {
             if (verbose)
@@ -633,6 +685,9 @@ namespace SCPermissions
         }
     }
 
+	/// <summary>
+	/// Sets vanilla ranks for joining players
+	/// </summary>
     internal class PlayerJoinHandler : IEventHandlerPlayerJoin
     {
         private SCPermissions plugin;
