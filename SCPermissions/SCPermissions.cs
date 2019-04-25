@@ -161,14 +161,10 @@ namespace SCPermissions
             this.AddCommand("scpermissions_verbose", new VerboseCommand(this));
             this.AddCommand("scpermissions_debug", new DebugCommand(this));
 
-            new Task(async () =>
-            {
-                await Task.Delay(4000);
-                LoadConfig();
-                LoadPlayerData();
-                this.AddEventHandlers(new PlayerJoinHandler(this), Priority.High);
-				this.Info("Special Containment Permissions loaded.");
-            }).Start();
+            LoadConfig();
+            LoadPlayerData();
+            this.AddEventHandlers(new PlayerJoinHandler(this), Priority.High);
+			this.Info("Special Containment Permissions loaded.");
         }
 
 
