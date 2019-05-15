@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -97,36 +97,18 @@ namespace SCPermissions
                     {
                         try
                         {
-                            // Checks if the rank has this permission listed single line format
-                            JToken singleLiner = permissions.SelectToken(rank.Name + "['" + permissionName + "']");
-                            if (singleLiner != null)
+                            JToken permissionNode = permissions.SelectToken(rank.Name + "['" + permissionName + "']");
+                            if (permissionNode != null)
                             {
                                 // Returns 1 if permission is allowed, returns -1 if permission is forbidden
-                                if (singleLiner.Value<bool>())
+                                if (permissionNode.Value<bool>())
                                 {
-                                    this.Debug("Returned singleline 1 for " + rank.Name);
+                                    this.Debug("Returned 1 from " + rank.Name);
                                     return 1;
                                 }
                                 else
                                 {
-                                    this.Debug("Returned singleline -1 for " + rank.Name);
-                                    return -1;
-                                }
-                            }
-
-                            // Checks if the rank has this permission listed in multiline format
-                            JToken multiLiner = permissions.SelectToken(rank.Name + "." + permissionName);
-                            if (multiLiner != null)
-                            {
-                                // Returns 1 if permission is allowed, returns -1 if permission is forbidden
-                                if (multiLiner.Value<bool>())
-                                {
-                                    this.Debug("Returned multiline 1 for " + rank.Name);
-                                    return 1;
-                                }
-                                else
-                                {
-                                    this.Debug("Returned multiline -1 for " + rank.Name);
+                                    this.Debug("Returned -1 from " + rank.Name);
                                     return -1;
                                 }
                             }
