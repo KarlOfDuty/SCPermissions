@@ -25,7 +25,7 @@ namespace SCPermissions
         name = "SCPermissions",
         description = "A permissions system. Secure, Contain, Permit.",
         id = "karlofduty.scpermissions",
-        version = "0.4.0",
+        version = "0.4.1",
         SmodMajor = 3,
         SmodMinor = 4,
         SmodRevision = 0
