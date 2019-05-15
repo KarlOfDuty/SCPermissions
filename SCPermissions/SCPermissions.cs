@@ -217,7 +217,7 @@ namespace SCPermissions
 
             // Converts the FileStream into a YAML Dictionary object
             IDeserializer deserializer = new DeserializerBuilder().Build();
-            playerRankDict = deserializer.Deserialize<Dictionary<string, HashSet<string>>>(new StreamReader(stream));
+            playerRankDict = deserializer.Deserialize<Dictionary<string, HashSet<string>>>(new StreamReader(stream)) ?? new Dictionary<string, HashSet<string>>();
 
             this.Info("Player data \"" + FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml\" loaded.");
         }
