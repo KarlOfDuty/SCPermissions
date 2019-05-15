@@ -44,11 +44,12 @@ namespace SCPermissions
         // Other config options
         public bool verbose = false;
         public bool debug = false;
-        private string defaultRank = "default";
+        private string defaultRank = "";
 
 		private HashSet<string> GetPlayerRanks(string steamID)
 		{
 			HashSet<string> ranks = new HashSet<string>();
+
 			if (playerRankDict.ContainsKey(steamID))
 			{
 				ranks.UnionWith(playerRankDict[steamID]);
@@ -58,7 +59,7 @@ namespace SCPermissions
 				ranks.UnionWith(tempPlayerRankDict[steamID]);
 			}
 
-			if(defaultRank != "")
+			if (defaultRank != "")
 			{
 				ranks.Add(defaultRank);
 			}
@@ -78,7 +79,7 @@ namespace SCPermissions
 
             if (permissions == null)
             {
-                this.Warn("Tried to check permision node '" + permissionName + "' but permissions had not been loaded yet.");
+                this.Warn("Tried to check permission node '" + permissionName + "' but permissions had not been loaded yet.");
                 return 0;
             }
 
@@ -120,7 +121,7 @@ namespace SCPermissions
                     }
                 }
             }
-            this.Debug("Returned end 0");
+            this.Debug("Returned 0");
             return 0;
         }
 
@@ -190,7 +191,6 @@ namespace SCPermissions
             debug = json.SelectToken("debug").Value<bool>();
             defaultRank = json.SelectToken("defaultRank").Value<string>();
 
-            this.Debug("JSON Actual: " + jsonString);
             this.Info("Config \"" + FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml\" loaded.");
         }
 
