@@ -137,7 +137,8 @@ namespace SCPermissions
             this.AddCommand("scperms_removerank", new RemoveRankCommand(this));
             this.AddCommand("scperms_givetemprank", new GiveTempRankCommand(this));
             this.AddCommand("scperms_removetemprank", new RemoveTempRankCommand(this));
-			this.AddCommand("scperms_verbose", new VerboseCommand(this));
+            this.AddCommand("scperms_listranks", new ListRanksCommand(this));
+            this.AddCommand("scperms_verbose", new VerboseCommand(this));
             this.AddCommand("scperms_debug", new DebugCommand(this));
 
             this.AddCommand("scpermissions_reload", new ReloadCommand(this));
@@ -145,7 +146,8 @@ namespace SCPermissions
             this.AddCommand("scpermissions_removerank", new RemoveRankCommand(this));
             this.AddCommand("scpermissions_givetemprank", new GiveTempRankCommand(this));
             this.AddCommand("scpermissions_removetemprank", new RemoveTempRankCommand(this));
-			this.AddCommand("scpermissions_verbose", new VerboseCommand(this));
+            this.AddCommand("scpermissions_listranks", new ListRanksCommand(this));
+            this.AddCommand("scpermissions_verbose", new VerboseCommand(this));
             this.AddCommand("scpermissions_debug", new DebugCommand(this));
 
             LoadConfig();
@@ -651,6 +653,52 @@ namespace SCPermissions
                 }
             }
         }
+
+		private class ListRanksCommand : ICommandHandler
+		{
+			private SCPermissions plugin;
+
+			public ListRanksCommand(SCPermissions plugin)
+			{
+				this.plugin = plugin;
+			}
+
+			public string GetCommandDescription()
+			{
+				return "List all registered ranks.";
+			}
+
+			public string GetUsage()
+			{
+				return "scperms_listranks";
+			}
+
+			public string[] OnCall(ICommandSender sender, string[] args)
+			{
+				if (args.Length > 1)
+				{
+					if (sender is Player player)
+					{
+						if (!player.HasPermission("scpermissions.listranks"))
+						{
+							return new string[] { "You don't have permission to use that command." };
+						}
+					}
+
+					List<string> strings = new List<string>();
+					JProperty[] allRanks = this.plugin.permissions.Properties().ToArray();
+					foreach (JProperty rank in allRanks)
+					{
+						strings.Add(rank.Name);
+					}
+					return new string[] { "Registered ranks: " + string.Join(", ", strings) };
+				}
+				else
+				{
+					return new string[] { "Not enough arguments." };
+				}
+			}
+		}
 
 		private class RemoveTempRankCommand : ICommandHandler
 		{
