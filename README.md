@@ -64,5 +64,6 @@ permissions:
 | `scperms_givetemprank <rank> <steamid>` | `scpermissions.givetemprank` | Gives a player the specified rank which is then removed on server restart. This mostly exists for automation support for other plugins. |
 | `scperms_removerank <rank> <steamid>` | `scpermission.removerank` | Removes a rank from a player, both saved and temp ranks. |
 | `scperms_removetemprank <rank> <steamid>` | `scpermission.removetemprank` | Removes a temp rank from a player. This mostly exists for automation support for other plugins. |
+| `scperms_listranks` | `scpermissions.listranks` | Shows all registered ranks. |
 | `scperms_verbose` | `scpermissions.verbose` | Toggles the verbose setting. |
 | `scperms_debug` | `scpermissions.debug` | Toggles the debug setting. |
