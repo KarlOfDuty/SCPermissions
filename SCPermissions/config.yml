@@ -5,55 +5,35 @@ verbose: true
 debug: false
 
 # The naem of the rank defined below which all players start with, set to "" to disable
-defaultRank: default
+defaultRank: player
 
-# Permissions are generally 
+# Permissions are generally stated as "pluginname.permissionname", you can assign permission nodes to different ranks here.
+# Use the scperms_giverank command to give a player a rank (or scperms_givetemprank for testing, the rank is then removed on server restart).
+# If you have set conflicting permissions a higher rank will always override a lower one as players can have several ranks at the same time.
+# The 'vanillarank' node gives players ranks designated in the vanilla config so you don't have to enter the players in both systems
 permissions:
-
-    # You can set permissions using single line statements
     admin:
         vanillarank: admin
-        scpermissions.test1: true
-        scpermissions.test2: true
-        scpermissions.test3: true
         scpermissions.reload: true
-        scpermissions.giverank: true
-        scpermissions.removerank: true
         scpermissions.verbose: true
         scpermissions.debug: true
-    # You can set permissions using object groups
+        scpermissions.giverank: true
+        scpermissions.removerank: true
+        scpermissions.giverank: true
+        scpermissions.removerank: true
+
     moderator:
         vanillarank: moderator
-        scpermissions:
-            test1: true
-            test2: true
-            test3: true
+        scpermissions.giverank: true
+        scpermissions.removerank: true
 
-    # You can also mix both styles if you wish
     donator:
         vanillarank: donator
-        scpermissions:
-            test1: true
-            test2: true
-        scpermissions.test3: true
-    # But you can NOT combine both styles for a single entry like this:
-    #   scpermissions.subcategory:
-    #       test: true
-    # or like this:
-    #   scpermissions:
-    #       subcategory.test: true
+        customloadouts.donatorloadouts: true
 
-    # You can set permissions negative to override lower roles
     restricted:
         vanillarank: restricted
-        scpermissions:
-            test1: false
-            test2: false
-            test3: false
+        customloadouts.playerloadouts: false
 
-    # You can set a default rank which all players have, it is recommended to keep this at the bottom as any lower ranks will just be overridden otherwise
-    default:
-        scpermissions:
-            test1: true
-            test2: false
-            test3: false
+    player:
+        customloadouts.playerloadouts: true
