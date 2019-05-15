@@ -135,13 +135,17 @@ namespace SCPermissions
             this.AddCommand("scperms_reload", new ReloadCommand(this));
             this.AddCommand("scperms_giverank", new GiveRankCommand(this));
             this.AddCommand("scperms_removerank", new RemoveRankCommand(this));
-            this.AddCommand("scperms_verbose", new VerboseCommand(this));
+            this.AddCommand("scperms_givetemprank", new GiveTempRankCommand(this));
+            this.AddCommand("scperms_removetemprank", new RemoveTempRankCommand(this));
+			this.AddCommand("scperms_verbose", new VerboseCommand(this));
             this.AddCommand("scperms_debug", new DebugCommand(this));
 
             this.AddCommand("scpermissions_reload", new ReloadCommand(this));
             this.AddCommand("scpermissions_giverank", new GiveRankCommand(this));
             this.AddCommand("scpermissions_removerank", new RemoveRankCommand(this));
-            this.AddCommand("scpermissions_verbose", new VerboseCommand(this));
+            this.AddCommand("scpermissions_givetemprank", new GiveTempRankCommand(this));
+            this.AddCommand("scpermissions_removetemprank", new RemoveTempRankCommand(this));
+			this.AddCommand("scpermissions_verbose", new VerboseCommand(this));
             this.AddCommand("scpermissions_debug", new DebugCommand(this));
 
             LoadConfig();
@@ -353,11 +357,12 @@ namespace SCPermissions
                 {
                     SavePlayerData();
                     RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
+                    RemoveTempRank(steamID, rank);
                     return true;
                 }
             }
-            return false;
-        }
+            return RemoveTempRank(steamID, rank);
+		}
 
 		/// <summary>
 		/// Removes a temp rank from a player.
@@ -541,7 +546,60 @@ namespace SCPermissions
             }
         }
 
-        private class RemoveRankCommand : ICommandHandler
+        private class GiveTempRankCommand : ICommandHandler
+        {
+	        private SCPermissions plugin;
+
+	        public GiveTempRankCommand(SCPermissions plugin)
+	        {
+		        this.plugin = plugin;
+	        }
+
+	        public string GetCommandDescription()
+	        {
+		        return "Gives a rank to a player for this session only, does not get saved on server restart.";
+	        }
+
+	        public string GetUsage()
+	        {
+		        return "scperms_givetemprank <rank> <steamid>";
+	        }
+
+	        public string[] OnCall(ICommandSender sender, string[] args)
+	        {
+		        if (args.Length > 1)
+		        {
+			        if (sender is Player player)
+			        {
+				        if (!player.HasPermission("scpermissions.givetemprank"))
+				        {
+					        return new string[] { "You don't have permission to use that command." };
+				        }
+
+				        if (!plugin.RankIsHigherThan(player.SteamId, args[1]))
+				        {
+					        return new string[] { "You are not allowed to edit players with ranks equal or above your own." };
+				        }
+			        }
+
+			        if (plugin.GiveTempRank(args[1], args[0]))
+			        {
+				        return new string[] { "Added the rank " + args[0] + " to " + args[1] + "." };
+			        }
+			        else
+			        {
+				        return new string[] { "Could not add that rank. Does the rank not exist or does the player already have it?" };
+			        }
+
+		        }
+		        else
+		        {
+			        return new string[] { "Not enough arguments." };
+		        }
+	        }
+        }
+
+		private class RemoveRankCommand : ICommandHandler
         {
             private SCPermissions plugin;
 
@@ -594,7 +652,60 @@ namespace SCPermissions
             }
         }
 
-        private class VerboseCommand : ICommandHandler
+		private class RemoveTempRankCommand : ICommandHandler
+		{
+			private SCPermissions plugin;
+
+			public RemoveTempRankCommand(SCPermissions plugin)
+			{
+				this.plugin = plugin;
+			}
+
+			public string GetCommandDescription()
+			{
+				return "Revokes a temporary rank from a player.";
+			}
+
+			public string GetUsage()
+			{
+				return "scperms_removetemprank <rank> <steamid>";
+			}
+
+			public string[] OnCall(ICommandSender sender, string[] args)
+			{
+				if (args.Length > 1)
+				{
+					if (sender is Player player)
+					{
+						if (!player.HasPermission("scpermissions.removetemprank"))
+						{
+							return new string[] { "You don't have permission to use that command." };
+						}
+
+						if (!plugin.RankIsHigherThan(player.SteamId, args[1]))
+						{
+							return new string[] { "You are not allowed to edit players with ranks equal or above your own." };
+						}
+					}
+
+					if (plugin.RemoveTempRank(args[1], args[0]))
+					{
+						return new string[] { "Removed the temporary rank " + args[0] + " from " + args[1] + "." };
+					}
+					else
+					{
+						return new string[] { "Could not remove that temporary rank. Does the player not have it?" };
+					}
+
+				}
+				else
+				{
+					return new string[] { "Not enough arguments." };
+				}
+			}
+		}
+
+		private class VerboseCommand : ICommandHandler
         {
             private SCPermissions plugin;
 
