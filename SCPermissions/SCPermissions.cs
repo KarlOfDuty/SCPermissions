@@ -152,7 +152,6 @@ namespace SCPermissions
 
             LoadConfig();
             LoadPlayerData();
-            this.AddEventHandlers(new PlayerJoinHandler(this), Priority.High);
 			this.Info("Special Containment Permissions loaded.");
         }
 
@@ -811,81 +810,6 @@ namespace SCPermissions
 
                 plugin.debug = !plugin.debug;
                 return new string[] { "Debug messages: " + plugin.debug };
-            }
-        }
-    }
-
-	/// <summary>
-	/// Sets vanilla ranks for joining players
-	/// </summary>
-    internal class PlayerJoinHandler : IEventHandlerPlayerJoin
-    {
-        private SCPermissions plugin;
-
-        public PlayerJoinHandler(SCPermissions plugin)
-        {
-            this.plugin = plugin;
-        }
-
-        public void OnPlayerJoin(PlayerJoinEvent ev)
-        {
-            try
-            {
-                new Task(() =>
-                {
-                    TestPerms(ev);
-                    plugin.RefreshVanillaRank(ev.Player);
-
-                }).Start();
-            }
-            catch (Exception e)
-            {
-                plugin.Verbose(e.ToString());
-            }
-        }
-
-        // Will be removed in version 1.0.0
-        private void TestPerms(PlayerJoinEvent ev)
-        {
-            if(!plugin.debug)
-            {
-                return;
-            }
-
-            if (ev.Player.HasPermission("scpermissions.test1"))
-            {
-                plugin.Info(ev.Player.Name + " has the test permission.");
-            }
-            else
-            {
-                plugin.Info(ev.Player.Name + " doesn't have the test permission.");
-            }
-
-            if (ev.Player.HasPermission("scpermissions.test2"))
-            {
-                plugin.Info(ev.Player.Name + " has the test permission.");
-            }
-            else
-            {
-                plugin.Info(ev.Player.Name + " doesn't have the test permission.");
-            }
-
-            if (ev.Player.HasPermission("scpermissions.test3"))
-            {
-                plugin.Info(ev.Player.Name + " has the test permission.");
-            }
-            else
-            {
-                plugin.Info(ev.Player.Name + " doesn't have the test permission.");
-            }
-
-            if (ev.Player.HasPermission("scpermissions.test4"))
-            {
-                plugin.Info(ev.Player.Name + " has the test permission.");
-            }
-            else
-            {
-                plugin.Info(ev.Player.Name + " doesn't have the test permission.");
             }
         }
     }
