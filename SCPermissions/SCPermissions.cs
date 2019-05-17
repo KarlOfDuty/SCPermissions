@@ -675,28 +675,21 @@ namespace SCPermissions
 
 			public string[] OnCall(ICommandSender sender, string[] args)
 			{
-				if (args.Length > 1)
+				if (sender is Player player)
 				{
-					if (sender is Player player)
+					if (!player.HasPermission("scpermissions.listranks"))
 					{
-						if (!player.HasPermission("scpermissions.listranks"))
-						{
-							return new string[] { "You don't have permission to use that command." };
-						}
+						return new string[] { "You don't have permission to use that command." };
 					}
+				}
 
-					List<string> strings = new List<string>();
-					JProperty[] allRanks = this.plugin.permissions.Properties().ToArray();
-					foreach (JProperty rank in allRanks)
-					{
-						strings.Add(rank.Name);
-					}
-					return new string[] { "Registered ranks: " + string.Join(", ", strings) };
-				}
-				else
+				List<string> strings = new List<string>();
+				JProperty[] allRanks = this.plugin.permissions.Properties().ToArray();
+				foreach (JProperty rank in allRanks)
 				{
-					return new string[] { "Not enough arguments." };
+					strings.Add(rank.Name);
 				}
+				return new string[] { "Registered ranks: " + string.Join(", ", strings) };
 			}
 		}
 
