@@ -21,10 +21,10 @@ namespace SCPermissions
         name = "SCPermissions",
         description = "A permissions system. Secure, Contain, Permit.",
         id = "karlofduty.scpermissions",
-        version = "0.4.2",
+        version = "0.4.3",
         SmodMajor = 3,
         SmodMinor = 4,
-        SmodRevision = 0
+        SmodRevision = 1
     )]
     public class SCPermissions : Plugin, IPermissionsHandler
     {
