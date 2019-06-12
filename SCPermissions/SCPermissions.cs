@@ -3,17 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using SCPermissions.Properties;
-using ServerMod2.API;
 using Smod2;
 using Smod2.API;
 using Smod2.Attributes;
 using Smod2.Commands;
 using Smod2.Config;
-using Smod2.EventHandlers;
-using Smod2.Events;
 using Smod2.Permissions;
 using Smod2.Piping;
 using YamlDotNet.Serialization;
@@ -32,7 +28,7 @@ namespace SCPermissions
     )]
     public class SCPermissions : Plugin, IPermissionsHandler
     {
-        // Contains all registered players steamid and list of the ranks they have
+        // Contains all registered players steamID and list of the ranks they have
         private Dictionary<string, HashSet<string>> playerRankDict = new Dictionary<string, HashSet<string>>();
 
 		// Same as above but is not saved to file
@@ -54,7 +50,8 @@ namespace SCPermissions
 			{
 				ranks.UnionWith(playerRankDict[steamID]);
 			}
-			else if (tempPlayerRankDict.ContainsKey(steamID))
+
+			if (tempPlayerRankDict.ContainsKey(steamID))
 			{
 				ranks.UnionWith(tempPlayerRankDict[steamID]);
 			}
@@ -568,35 +565,47 @@ namespace SCPermissions
 
 	        public string[] OnCall(ICommandSender sender, string[] args)
 	        {
-		        if (args.Length > 1)
+		        try
 		        {
-			        if (sender is Player player)
+			        if (args.Length > 1)
 			        {
-				        if (!player.HasPermission("scpermissions.givetemprank"))
+				        if (sender is Player player)
 				        {
-					        return new string[] { "You don't have permission to use that command." };
+					        if (!player.HasPermission("scpermissions.givetemprank"))
+					        {
+						        return new string[] {"You don't have permission to use that command."};
+					        }
+
+					        if (!plugin.RankIsHigherThan(player.SteamId, args[1]))
+					        {
+						        return new string[]
+							        {"You are not allowed to edit players with ranks equal or above your own."};
+					        }
 				        }
 
-				        if (!plugin.RankIsHigherThan(player.SteamId, args[1]))
+				        if (plugin.GiveTempRank(args[1], args[0]))
 				        {
-					        return new string[] { "You are not allowed to edit players with ranks equal or above your own." };
+					        return new string[] {"Added the rank " + args[0] + " to " + args[1] + "."};
 				        }
-			        }
+				        else
+				        {
+					        return new string[]
+					        {
+						        "Could not add that rank. Does the rank not exist or does the player already have it?"
+					        };
+				        }
 
-			        if (plugin.GiveTempRank(args[1], args[0]))
-			        {
-				        return new string[] { "Added the rank " + args[0] + " to " + args[1] + "." };
 			        }
 			        else
 			        {
-				        return new string[] { "Could not add that rank. Does the rank not exist or does the player already have it?" };
+				        return new string[] {"Not enough arguments."};
 			        }
-
 		        }
-		        else
+		        catch (Exception e)
 		        {
-			        return new string[] { "Not enough arguments." };
-		        }
+			        this.plugin.Error("Error occured: " + e);
+			        return new string[] { "Error occured." };
+				}
 	        }
         }
 
