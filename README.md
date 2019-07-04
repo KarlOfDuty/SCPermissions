@@ -7,9 +7,9 @@ A permissions plugin for Smod/SCP:SL. Requires Smod version 3.4.0+.
 
 ```yaml
 # Whether or not the config should be placed in the global config directory
-scpermissions_config_global: true
+scperms_config_global: true
 # Whether or not the player data file should be placed in the global config directory
-scpermissions_playerdata_global: true
+scperms_playerdata_global: true
 ```
 
 ## Plugin config
