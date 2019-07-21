@@ -1,4 +1,4 @@
-# SCPermissions
+# SCPermissions [![Release](https://img.shields.io/github/release/KarlofDuty/SCPermissions.svg)](https://github.com/KarlOfDuty/SCPermissions/releases) [![Downloads](https://img.shields.io/github/downloads/KarlOfDuty/SCPermissions/total.svg)](https://github.com/KarlOfDuty/SCPermissions/releases) [![Discord Server](https://img.shields.io/discord/430468637183442945.svg?label=discord)](https://discord.gg/C5qMvkj)  [![Patreon](https://img.shields.io/badge/patreon-donate-orange.svg)](https://patreon.com/karlofduty)
 A permissions plugin for Smod/SCP:SL. Requires Smod version 3.4.0+.
 
 # Config
