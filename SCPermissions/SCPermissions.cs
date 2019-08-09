@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using SCPermissions.Properties;
 using Smod2;
@@ -10,6 +11,8 @@ using Smod2.API;
 using Smod2.Attributes;
 using Smod2.Commands;
 using Smod2.Config;
+using Smod2.EventHandlers;
+using Smod2.Events;
 using Smod2.Permissions;
 using Smod2.Piping;
 using YamlDotNet.Serialization;
@@ -38,8 +41,8 @@ namespace SCPermissions
 		private JObject permissions = null;
 
         // Other config options
-        public bool verbose = false;
-        public bool debug = false;
+        private bool verbose = false;
+        private bool debug = false;
         private string defaultRank = "";
 
 		private HashSet<string> GetPlayerRanks(string steamID)
@@ -842,59 +845,13 @@ namespace SCPermissions
             {
                 new Task(() =>
                 {
-                    TestPerms(ev);
-                    plugin.RefreshVanillaRank(ev.Player);
+	                plugin.RefreshVanillaRank(ev.Player);
 
                 }).Start();
             }
             catch (Exception e)
             {
                 plugin.Verbose(e.ToString());
-            }
-        }
-
-        // Will be removed in version 1.0.0
-        private void TestPerms(PlayerJoinEvent ev)
-        {
-            if(!plugin.debug)
-            {
-                return;
-            }
-
-            if (ev.Player.HasPermission("scpermissions.test1"))
-            {
-                plugin.Info(ev.Player.Name + " has the test permission.");
-            }
-            else
-            {
-                plugin.Info(ev.Player.Name + " doesn't have the test permission.");
-            }
-
-            if (ev.Player.HasPermission("scpermissions.test2"))
-            {
-                plugin.Info(ev.Player.Name + " has the test permission.");
-            }
-            else
-            {
-                plugin.Info(ev.Player.Name + " doesn't have the test permission.");
-            }
-
-            if (ev.Player.HasPermission("scpermissions.test3"))
-            {
-                plugin.Info(ev.Player.Name + " has the test permission.");
-            }
-            else
-            {
-                plugin.Info(ev.Player.Name + " doesn't have the test permission.");
-            }
-
-            if (ev.Player.HasPermission("scpermissions.test4"))
-            {
-                plugin.Info(ev.Player.Name + " has the test permission.");
-            }
-            else
-            {
-                plugin.Info(ev.Player.Name + " doesn't have the test permission.");
             }
         }
     }
