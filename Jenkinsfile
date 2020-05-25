@@ -18,11 +18,11 @@ pipeline {
       }
     }
     stage('Package') {
-	  steps {
-		sh 'mv SCPermissions/bin/SCPermissions.dll Plugin/'
-		sh 'mv SCPermissions/bin/YamlDotNet.dll Plugin/dependencies'
-		sh 'mv SCPermissions/bin/Newtonsoft.Json.dll Plugin/dependencies'
-	  }
+      steps {
+        sh 'mv SCPermissions/bin/SCPermissions.dll Plugin/'
+        sh 'mv SCPermissions/bin/YamlDotNet.dll Plugin/dependencies'
+        sh 'mv SCPermissions/bin/Newtonsoft.Json.dll Plugin/dependencies'
+      }
     }
     stage('Archive') {
       steps {
