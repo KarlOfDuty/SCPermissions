@@ -24,15 +24,15 @@ namespace SCPermissions
         name = "SCPermissions",
         description = "A permissions system. Secure, Contain, Permit.",
         id = "karlofduty.scpermissions",
-        version = "1.0.0",
+        version = "1.0.1",
         SmodMajor = 3,
-        SmodMinor = 5,
+        SmodMinor = 7,
         SmodRevision = 0
     )]
     public class SCPermissions : Plugin, IPermissionsHandler
     {
-        // Contains all registered players steamID and list of the ranks they have
-        private Dictionary<string, HashSet<string>> playerRankDict = new Dictionary<string, HashSet<string>>();
+		// Contains all registered players userIDs and list of the ranks they have
+		private Dictionary<string, HashSet<string>> playerRankDict = new Dictionary<string, HashSet<string>>();
 
 		// Same as above but is not saved to file
 		private Dictionary<string, HashSet<string>> tempPlayerRankDict = new Dictionary<string, HashSet<string>>();
@@ -45,18 +45,18 @@ namespace SCPermissions
         private bool debug = false;
         private string defaultRank = "";
 
-		private HashSet<string> GetPlayerRanks(string steamID)
+		private HashSet<string> GetPlayerRanks(string userID)
 		{
 			HashSet<string> ranks = new HashSet<string>();
 
-			if (playerRankDict.ContainsKey(steamID))
+			if (playerRankDict.ContainsKey(userID))
 			{
-				ranks.UnionWith(playerRankDict[steamID]);
+				ranks.UnionWith(playerRankDict[userID]);
 			}
 
-			if (tempPlayerRankDict.ContainsKey(steamID))
+			if (tempPlayerRankDict.ContainsKey(userID))
 			{
-				ranks.UnionWith(tempPlayerRankDict[steamID]);
+				ranks.UnionWith(tempPlayerRankDict[userID]);
 			}
 
 			if (defaultRank != "")
@@ -69,13 +69,13 @@ namespace SCPermissions
         // Called by the permissions manager when any plugin checks the permissions of a player
         public short CheckPermission(Player player, string permissionName)
         {
-            return CheckPermission(player.SteamId, permissionName);
+            return CheckPermission(player.UserId, permissionName);
         }
 
-        // I've split this up so I can easily provide a steamid without joining when debugging
-        public short CheckPermission(string steamID, string permissionName)
+		// I've split this up so I can easily provide a userID without joining when debugging
+		public short CheckPermission(string userID, string permissionName)
         {
-            this.Debug("Checking permission '" + permissionName + "' on " + steamID + ".");
+            this.Debug("Checking permission '" + permissionName + "' on " + userID + ".");
 
             if (permissions == null)
             {
@@ -83,7 +83,7 @@ namespace SCPermissions
                 return 0;
             }
 
-			HashSet<string> playerRanks = GetPlayerRanks(steamID);
+			HashSet<string> playerRanks = GetPlayerRanks(userID);
 
             // Check if player has any ranks
             if (playerRanks.Count > 0)
@@ -169,18 +169,18 @@ namespace SCPermissions
 		/// </summary>
         private void LoadConfig()
         {
-            if (!Directory.Exists(FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions"))
+            if (!Directory.Exists(FileManager.GetAppFolder(true, !GetConfigBool("scperms_config_global")) + "SCPermissions"))
             {
-                Directory.CreateDirectory(FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions");
+                Directory.CreateDirectory(FileManager.GetAppFolder(true, !GetConfigBool("scperms_config_global")) + "SCPermissions");
             }
 
-            if (!File.Exists(FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml"))
+            if (!File.Exists(FileManager.GetAppFolder(true, !GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml"))
             {
-                File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml", Encoding.UTF8.GetString(Resources.config));
+                File.WriteAllText(FileManager.GetAppFolder(true, !GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml", Encoding.UTF8.GetString(Resources.config));
             }
 
             // Reads config contents into FileStream
-            FileStream stream = File.OpenRead(FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml");
+            FileStream stream = File.OpenRead(FileManager.GetAppFolder(true, !GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml");
 
             // Converts the FileStream into a YAML Dictionary object
             IDeserializer deserializer = new DeserializerBuilder().Build();
@@ -197,7 +197,7 @@ namespace SCPermissions
             debug = json.SelectToken("debug").Value<bool>();
             defaultRank = json.SelectToken("defaultRank").Value<string>();
 
-            this.Info("Config \"" + FileManager.GetAppFolder(GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml\" loaded.");
+            this.Info("Config \"" + FileManager.GetAppFolder(true, !GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml\" loaded.");
         }
 
 		/// <summary>
@@ -205,23 +205,23 @@ namespace SCPermissions
 		/// </summary>
         private void LoadPlayerData()
         {
-            if (!Directory.Exists(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions"))
+            if (!Directory.Exists(FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions"))
             {
-                Directory.CreateDirectory(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions");
+                Directory.CreateDirectory(FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions");
             }
-            if (!File.Exists(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml"))
+            if (!File.Exists(FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml"))
             {
-                File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml", Encoding.UTF8.GetString(Resources.players));
+                File.WriteAllText(FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml", Encoding.UTF8.GetString(Resources.players));
             }
 
             // Reads config contents into FileStream
-            FileStream stream = File.OpenRead(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml");
+            FileStream stream = File.OpenRead(FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml");
 
             // Converts the FileStream into a YAML Dictionary object
             IDeserializer deserializer = new DeserializerBuilder().Build();
             playerRankDict = deserializer.Deserialize<Dictionary<string, HashSet<string>>>(new StreamReader(stream)) ?? new Dictionary<string, HashSet<string>>();
 
-            this.Info("Player data \"" + FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml\" loaded.");
+            this.Info("Player data \"" + FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml\" loaded.");
         }
 
 		/// <summary>
@@ -237,19 +237,19 @@ namespace SCPermissions
                     builder.Append(playerRanks.Key + ": [ \"" + string.Join("\", \"", playerRanks.Value) + "\" ]\n");
                 }
             }
-            File.WriteAllText(FileManager.GetAppFolder(GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml", builder.ToString());
+            File.WriteAllText(FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml", builder.ToString());
         }
 
 		/// <summary>
 		/// Checks if the first player has a higher rank than the second.
 		/// </summary>
-		/// <param name="highRankSteamID">SteamID of the player assumed to have the higher rank.</param>
-		/// <param name="lowRankSteamID">SteamID of the player assumed to have the lower rank.</param>
+		/// <param name="highRankUserID">userID of the player assumed to have the higher rank.</param>
+		/// <param name="lowRankUserID">userID of the player assumed to have the lower rank.</param>
 		/// <returns></returns>
-        private bool RankIsHigherThan(string highRankSteamID, string lowRankSteamID)
+		private bool RankIsHigherThan(string highRankUserID, string lowRankUserID)
         {
-			HashSet<string> highPlayerRanks = GetPlayerRanks(highRankSteamID);
-			HashSet<string> lowPlayerRanks = GetPlayerRanks(lowRankSteamID);
+			HashSet<string> highPlayerRanks = GetPlayerRanks(highRankUserID);
+			HashSet<string> lowPlayerRanks = GetPlayerRanks(lowRankUserID);
 
 			if (highPlayerRanks.Count == 0)
             {
@@ -298,89 +298,89 @@ namespace SCPermissions
 		/// <summary>
 		/// Gives a rank to a player, refreshes their vanilla rank and saves all players ranks to file
 		/// </summary>
-		/// <param name="steamID">SteamID of the player.</param>
+		/// <param name="userID">userID of the player.</param>
 		/// <param name="rank">Rank to grant.</param>
 		/// <returns></returns>
 		[PipeMethod]
-        public bool GiveRank(string steamID, string rank)
+        public bool GiveRank(string userID, string rank)
         {
             if(!RankExists(rank))
             {
                 return false;
             }
 
-            if(!playerRankDict.ContainsKey(steamID))
+            if(!playerRankDict.ContainsKey(userID))
             {
-                playerRankDict.Add(steamID, new HashSet<string>());
+                playerRankDict.Add(userID, new HashSet<string>());
             }
 
-			playerRankDict[steamID].Add(rank);
+			playerRankDict[userID].Add(rank);
 			SavePlayerData();
-            RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
+            RefreshVanillaRank(this.Server.GetPlayers(userID).FirstOrDefault());
             return true;
         }
 
 		/// <summary>
 		/// Gives a temporary rank to a player which is not saved to file and refreshes the vanilla rank
 		/// </summary>
-		/// <param name="steamID">SteamID of the player.</param>
+		/// <param name="userID">userID of the player.</param>
 		/// <param name="rank">Rank to grant.</param>
 		/// <returns></returns>
 		[PipeMethod]
-		public bool GiveTempRank(string steamID, string rank)
+		public bool GiveTempRank(string userID, string rank)
 		{
 			if (!RankExists(rank))
 			{
 				return false;
 			}
 
-			if (!tempPlayerRankDict.ContainsKey(steamID))
+			if (!tempPlayerRankDict.ContainsKey(userID))
 			{
-				tempPlayerRankDict.Add(steamID, new HashSet<string>());
+				tempPlayerRankDict.Add(userID, new HashSet<string>());
 			}
 
-			tempPlayerRankDict[steamID].Add(rank);
-			RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
+			tempPlayerRankDict[userID].Add(rank);
+			RefreshVanillaRank(this.Server.GetPlayers(userID).FirstOrDefault());
 			return true;
 		}
 
 		/// <summary>
 		/// Removes a rank from a player.
 		/// </summary>
-		/// <param name="steamID">SteamID of the player.</param>
+		/// <param name="userID">userID of the player.</param>
 		/// <param name="rank">Rank to remove.</param>
 		/// <returns></returns>
 		[PipeMethod]
-		public bool RemoveRank(string steamID, string rank)
+		public bool RemoveRank(string userID, string rank)
         {
-            if (playerRankDict.ContainsKey(steamID))
+            if (playerRankDict.ContainsKey(userID))
             {
-                if (playerRankDict[steamID].Remove(rank))
+                if (playerRankDict[userID].Remove(rank))
                 {
                     SavePlayerData();
-                    RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
-                    RemoveTempRank(steamID, rank);
+                    RefreshVanillaRank(this.Server.GetPlayers(userID).FirstOrDefault());
+                    RemoveTempRank(userID, rank);
                     return true;
                 }
             }
-            return RemoveTempRank(steamID, rank);
+            return RemoveTempRank(userID, rank);
 		}
 
 		/// <summary>
 		/// Removes a temp rank from a player.
 		/// </summary>
-		/// <param name="steamID">SteamID of the player.</param>
+		/// <param name="userID">userID of the player.</param>
 		/// <param name="rank">Rank to remove.</param>
 		/// <returns></returns>
 		[PipeMethod]
-		public bool RemoveTempRank(string steamID, string rank)
+		public bool RemoveTempRank(string userID, string rank)
 		{
-			if (tempPlayerRankDict.ContainsKey(steamID))
+			if (tempPlayerRankDict.ContainsKey(userID))
 			{
-				if (tempPlayerRankDict[steamID].Remove(rank))
+				if (tempPlayerRankDict[userID].Remove(rank))
 				{
 					SavePlayerData();
-					RefreshVanillaRank(this.Server.GetPlayers(steamID).FirstOrDefault());
+					RefreshVanillaRank(this.Server.GetPlayers(userID).FirstOrDefault());
 					return true;
 				}
 			}
@@ -400,7 +400,7 @@ namespace SCPermissions
 
 			this.Debug("Refreshing vanilla ranks for: " + player.Name);
 
-			HashSet<string> playerRanks = GetPlayerRanks(player.SteamId);
+			HashSet<string> playerRanks = GetPlayerRanks(player.UserId);
             if (playerRanks.Count > 0)
             {
                 this.Debug("Ranks: " + string.Join(", ", playerRanks));
@@ -470,7 +470,7 @@ namespace SCPermissions
 
             public string GetCommandDescription()
             {
-                return "Reloads the config abnd player data.";
+                return "Reloads the config and player data.";
             }
 
             public string GetUsage()
@@ -484,14 +484,14 @@ namespace SCPermissions
                 {
                     if (!player.HasPermission("scpermissions.reload"))
                     {
-                        return new string[] { "You don't have permission to use that command." };
+                        return new[] { "You don't have permission to use that command." };
                     }
                 }
 
                 plugin.Info("Reloading plugin...");
                 plugin.LoadConfig();
                 plugin.LoadPlayerData();
-                return new string[] { "Reload complete." };
+                return new[] { "Reload complete." };
             }
         }
 
@@ -511,7 +511,7 @@ namespace SCPermissions
 
             public string GetUsage()
             {
-                return "scperms_giverank <rank> <steamid>";
+                return "scperms_giverank <rank> <userID>";
             }
 
             public string[] OnCall(ICommandSender sender, string[] args)
@@ -522,28 +522,27 @@ namespace SCPermissions
                     {
                         if (!player.HasPermission("scpermissions.giverank"))
                         {
-                            return new string[] { "You don't have permission to use that command." };
+                            return new[] { "You don't have permission to use that command." };
                         }
 
-                        if(!plugin.RankIsHigherThan(player.SteamId, args[1]))
+                        if(!plugin.RankIsHigherThan(player.UserId, args[1]))
                         {
-                            return new string[] { "You are not allowed to edit players with ranks equal or above your own." };
+                            return new[] { "You are not allowed to edit players with ranks equal or above your own." };
                         }
                     }
 
                     if (plugin.GiveRank(args[1], args[0]))
                     {
-                        return new string[] { "Added the rank " + args[0] + " to " + args[1] + "." };
+                        return new[] { "Added the rank " + args[0] + " to " + args[1] + "." };
                     }
                     else
                     {
-                        return new string[] { "Could not add that rank. Does the rank not exist or does the player already have it?" };
+                        return new[] { "Could not add that rank. Does the rank not exist or does the player already have it?" };
                     }
-
                 }
                 else
                 {
-                    return new string[] { "Not enough arguments." };
+                    return new[] { "Not enough arguments." };
                 }
             }
         }
@@ -564,7 +563,7 @@ namespace SCPermissions
 
 	        public string GetUsage()
 	        {
-		        return "scperms_givetemprank <rank> <steamid>";
+		        return "scperms_givetemprank <rank> <userID>";
 	        }
 
 	        public string[] OnCall(ICommandSender sender, string[] args)
@@ -577,38 +576,34 @@ namespace SCPermissions
 				        {
 					        if (!player.HasPermission("scpermissions.givetemprank"))
 					        {
-						        return new string[] {"You don't have permission to use that command."};
+						        return new[] {"You don't have permission to use that command."};
 					        }
 
-					        if (!plugin.RankIsHigherThan(player.SteamId, args[1]))
+					        if (!plugin.RankIsHigherThan(player.UserId, args[1]))
 					        {
-						        return new string[]
-							        {"You are not allowed to edit players with ranks equal or above your own."};
+						        return new[] {"You are not allowed to edit players with ranks equal or above your own."};
 					        }
 				        }
 
 				        if (plugin.GiveTempRank(args[1], args[0]))
 				        {
-					        return new string[] {"Added the rank " + args[0] + " to " + args[1] + "."};
+					        return new[] {"Added the rank " + args[0] + " to " + args[1] + "."};
 				        }
 				        else
 				        {
-					        return new string[]
-					        {
-						        "Could not add that rank. Does the rank not exist or does the player already have it?"
-					        };
+					        return new[] { "Could not add that rank. Does the rank not exist or does the player already have it?" };
 				        }
 
 			        }
 			        else
 			        {
-				        return new string[] {"Not enough arguments."};
+				        return new[] {"Not enough arguments."};
 			        }
 		        }
 		        catch (Exception e)
 		        {
 			        this.plugin.Error("Error occured: " + e);
-			        return new string[] { "Error occured." };
+			        return new[] { "Error occured." };
 				}
 	        }
         }
@@ -629,7 +624,7 @@ namespace SCPermissions
 
             public string GetUsage()
             {
-                return "scperms_removerank <rank> <steamid>";
+                return "scperms_removerank <rank> <userID>";
             }
 
             public string[] OnCall(ICommandSender sender, string[] args)
@@ -640,28 +635,28 @@ namespace SCPermissions
                     {
                         if (!player.HasPermission("scpermissions.removerank"))
                         {
-                            return new string[] { "You don't have permission to use that command." };
+                            return new[] { "You don't have permission to use that command." };
                         }
 
-                        if (!plugin.RankIsHigherThan(player.SteamId, args[1]))
+                        if (!plugin.RankIsHigherThan(player.UserId, args[1]))
                         {
-                            return new string[] { "You are not allowed to edit players with ranks equal or above your own." };
+                            return new[] { "You are not allowed to edit players with ranks equal or above your own." };
                         }
                     }
 
                     if (plugin.RemoveRank(args[1], args[0]))
                     {
-                        return new string[] { "Removed the rank " + args[0] + " from " + args[1] + "." };
+                        return new[] { "Removed the rank " + args[0] + " from " + args[1] + "." };
                     }
                     else
                     {
-                        return new string[] { "Could not remove that rank. Does the player not have it?" };
+                        return new[] { "Could not remove that rank. Does the player not have it?" };
                     }
 
                 }
                 else
                 {
-                    return new string[] { "Not enough arguments." };
+                    return new[] { "Not enough arguments." };
                 }
             }
         }
@@ -691,7 +686,7 @@ namespace SCPermissions
 				{
 					if (!player.HasPermission("scpermissions.listranks"))
 					{
-						return new string[] { "You don't have permission to use that command." };
+						return new[] { "You don't have permission to use that command." };
 					}
 				}
 
@@ -701,7 +696,7 @@ namespace SCPermissions
 				{
 					strings.Add(rank.Name);
 				}
-				return new string[] { "Registered ranks: " + string.Join(", ", strings) };
+				return new[] { "Registered ranks: " + string.Join(", ", strings) };
 			}
 		}
 
@@ -721,7 +716,7 @@ namespace SCPermissions
 
 			public string GetUsage()
 			{
-				return "scperms_removetemprank <rank> <steamid>";
+				return "scperms_removetemprank <rank> <userID>";
 			}
 
 			public string[] OnCall(ICommandSender sender, string[] args)
@@ -732,28 +727,28 @@ namespace SCPermissions
 					{
 						if (!player.HasPermission("scpermissions.removetemprank"))
 						{
-							return new string[] { "You don't have permission to use that command." };
+							return new[] { "You don't have permission to use that command." };
 						}
 
-						if (!plugin.RankIsHigherThan(player.SteamId, args[1]))
+						if (!plugin.RankIsHigherThan(player.UserId, args[1]))
 						{
-							return new string[] { "You are not allowed to edit players with ranks equal or above your own." };
+							return new[] { "You are not allowed to edit players with ranks equal or above your own." };
 						}
 					}
 
 					if (plugin.RemoveTempRank(args[1], args[0]))
 					{
-						return new string[] { "Removed the temporary rank " + args[0] + " from " + args[1] + "." };
+						return new[] { "Removed the temporary rank " + args[0] + " from " + args[1] + "." };
 					}
 					else
 					{
-						return new string[] { "Could not remove that temporary rank. Does the player not have it?" };
+						return new[] { "Could not remove that temporary rank. Does the player not have it?" };
 					}
 
 				}
 				else
 				{
-					return new string[] { "Not enough arguments." };
+					return new[] { "Not enough arguments." };
 				}
 			}
 		}
@@ -783,12 +778,12 @@ namespace SCPermissions
                 {
                     if (!player.HasPermission("scpermissions.verbose"))
                     {
-                        return new string[] { "You don't have permission to use that command." };
+                        return new[] { "You don't have permission to use that command." };
                     }
                 }
 
                 plugin.verbose = !plugin.verbose;
-                return new string[] { "Verbose messages: " + plugin.verbose };
+                return new[] { "Verbose messages: " + plugin.verbose };
             }
         }
 
@@ -817,12 +812,12 @@ namespace SCPermissions
                 {
                     if (!player.HasPermission("scpermissions.debug"))
                     {
-                        return new string[] { "You don't have permission to use that command." };
+                        return new[] { "You don't have permission to use that command." };
                     }
                 }
 
                 plugin.debug = !plugin.debug;
-                return new string[] { "Debug messages: " + plugin.debug };
+                return new[] { "Debug messages: " + plugin.debug };
             }
         }
     }
