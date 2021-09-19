@@ -51,17 +51,32 @@ namespace SCPermissions
 
 			if (playerRankDict.ContainsKey(userID))
 			{
+				this.Debug("Permanent ranks: " + string.Join(", ", playerRankDict[userID]));
 				ranks.UnionWith(playerRankDict[userID]);
+			}
+			else
+			{
+				this.Debug("Player has no permanent ranks.");
 			}
 
 			if (tempPlayerRankDict.ContainsKey(userID))
 			{
+				this.Debug("Temporary ranks: " + string.Join(", ", tempPlayerRankDict[userID]));
 				ranks.UnionWith(tempPlayerRankDict[userID]);
+			}
+			else
+			{
+				this.Debug("Player has no temporary ranks.");
 			}
 
 			if (defaultRank != "")
 			{
 				ranks.Add(defaultRank);
+				this.Debug("Default rank: " + defaultRank);
+			}
+			else
+			{
+				this.Debug("No default rank exists.");
 			}
 			return ranks;
 		}
@@ -399,7 +414,7 @@ namespace SCPermissions
 			HashSet<string> playerRanks = GetPlayerRanks(player.UserId);
 			if (playerRanks.Count > 0)
 			{
-				this.Debug("Ranks: " + string.Join(", ", playerRanks));
+				this.Debug("Found ranks: " + string.Join(", ", playerRanks));
 
 				// Check every rank from the rank system in the order they are registered in the config until a vanillarank entry is found
 				JProperty[] ranks = permissions.Properties().ToArray();
@@ -450,6 +465,31 @@ namespace SCPermissions
 			{
 				this.Info(message);
 			}
+		}
+
+		public bool ValidateUserID(string userID)
+		{
+			if (!userID.EndsWith("@steam") && !userID.EndsWith("@discord"))
+			{
+				this.Debug("UserID '" + userID + "' doesn't end with either @steam or @discord, making it invalid.");
+				return false;
+			}
+
+			string rawID = userID.Replace("@steam", "").Replace("@discord", "");
+			if(!ulong.TryParse(rawID, out ulong _))
+			{
+				this.Debug("Partial UserID '" + rawID + "' is not convertable to a 64bit unsigned integer, making it invalid.");
+				return false;
+			}
+
+			if (rawID.Length < 17)
+			{
+				this.Debug("Partial UserID '" + rawID + "' is not long enough to be a valid id.");
+				return false;
+			}
+
+			this.Debug("UserID '" + userID + "' is valid.");
+			return true;
 		}
 
 		/////////////////////////////////
@@ -527,6 +567,11 @@ namespace SCPermissions
 						}
 					}
 
+					if (!plugin.ValidateUserID(args[1]))
+					{
+						return new[] { "That doesn't look like a valid user ID, it has to be a number at least 17 characters long and ending with either @steam or @discord" };
+					}
+
 					if (plugin.GiveRank(args[1], args[0]))
 					{
 						return new[] { "Added the rank " + args[0] + " to " + args[1] + "." };
@@ -579,6 +624,11 @@ namespace SCPermissions
 							{
 								return new[] {"You are not allowed to edit players with ranks equal or above your own."};
 							}
+						}
+
+						if (!plugin.ValidateUserID(args[1]))
+						{
+							return new[] { "That doesn't look like a valid user ID, it has to be a number at least 17 characters long and ending with either @steam or @discord" };
 						}
 
 						if (plugin.GiveTempRank(args[1], args[0]))
