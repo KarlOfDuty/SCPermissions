@@ -1,4 +1,7 @@
 # SCPermissions [![Build Status](https://jenkins.karlofduty.com/job/SCPermissions/job/master/badge/icon)](https://jenkins.karlofduty.com/blue/organizations/jenkins/SCPermissions/activity) [![Release](https://img.shields.io/github/release/KarlofDuty/SCPermissions.svg)](https://github.com/KarlOfDuty/SCPermissions/releases) [![Downloads](https://img.shields.io/github/downloads/KarlOfDuty/SCPermissions/total.svg)](https://github.com/KarlOfDuty/SCPermissions/releases) [![Discord Server](https://img.shields.io/discord/430468637183442945.svg?label=discord)](https://discord.gg/C5qMvkj)
+
+# This plugin has been abandoned as the smod plugin api has been abandoned.
+
 A permissions plugin for Smod/SCP:SL. Requires Smod version 3.4.0+.
 
 # Config
