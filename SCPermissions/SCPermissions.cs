@@ -24,10 +24,10 @@ namespace SCPermissions
 		name = "SCPermissions",
 		description = "A permissions system. Secure, Contain, Permit.",
 		id = "karlofduty.scpermissions",
-		version = "1.0.3",
+		version = "1.0.4",
 		SmodMajor = 3,
-		SmodMinor = 9,
-		SmodRevision = 10
+		SmodMinor = 10,
+		SmodRevision = 0
 	)]
 	public class SCPermissions : Plugin, IPermissionsHandler
 	{
@@ -84,7 +84,7 @@ namespace SCPermissions
 		// Called by the permissions manager when any plugin checks the permissions of a player
 		public short CheckPermission(Player player, string permissionName)
 		{
-			return CheckPermission(player.UserId, permissionName);
+			return CheckPermission(player.UserID, permissionName);
 		}
 
 		// I've split this up so I can easily provide a userID without joining when debugging
@@ -411,7 +411,7 @@ namespace SCPermissions
 
 			this.Debug("Refreshing vanilla ranks for: " + player.Name);
 
-			HashSet<string> playerRanks = GetPlayerRanks(player.UserId);
+			HashSet<string> playerRanks = GetPlayerRanks(player.UserID);
 			if (playerRanks.Count > 0)
 			{
 				this.Debug("Found ranks: " + string.Join(", ", playerRanks));
@@ -497,7 +497,7 @@ namespace SCPermissions
 		////////////////////////////////
 		private class ReloadCommand : ICommandHandler
 		{
-			private SCPermissions plugin;
+			private readonly SCPermissions plugin;
 
 			public ReloadCommand(SCPermissions plugin)
 			{
@@ -533,7 +533,7 @@ namespace SCPermissions
 
 		private class GiveRankCommand : ICommandHandler
 		{
-			private SCPermissions plugin;
+			private readonly SCPermissions plugin;
 
 			public GiveRankCommand(SCPermissions plugin)
 			{
@@ -561,7 +561,7 @@ namespace SCPermissions
 							return new[] { "You don't have permission to use that command." };
 						}
 
-						if(!plugin.RankIsHigherThan(player.UserId, args[1]))
+						if(!plugin.RankIsHigherThan(player.UserID, args[1]))
 						{
 							return new[] { "You are not allowed to edit players with ranks equal or above your own." };
 						}
@@ -590,7 +590,7 @@ namespace SCPermissions
 
 		private class GiveTempRankCommand : ICommandHandler
 		{
-			private SCPermissions plugin;
+			private readonly SCPermissions plugin;
 
 			public GiveTempRankCommand(SCPermissions plugin)
 			{
@@ -620,7 +620,7 @@ namespace SCPermissions
 								return new[] {"You don't have permission to use that command."};
 							}
 
-							if (!plugin.RankIsHigherThan(player.UserId, args[1]))
+							if (!plugin.RankIsHigherThan(player.UserID, args[1]))
 							{
 								return new[] {"You are not allowed to edit players with ranks equal or above your own."};
 							}
@@ -656,7 +656,7 @@ namespace SCPermissions
 
 		private class RemoveRankCommand : ICommandHandler
 		{
-			private SCPermissions plugin;
+			private readonly SCPermissions plugin;
 
 			public RemoveRankCommand(SCPermissions plugin)
 			{
@@ -684,7 +684,7 @@ namespace SCPermissions
 							return new[] { "You don't have permission to use that command." };
 						}
 
-						if (!plugin.RankIsHigherThan(player.UserId, args[1]))
+						if (!plugin.RankIsHigherThan(player.UserID, args[1]))
 						{
 							return new[] { "You are not allowed to edit players with ranks equal or above your own." };
 						}
@@ -709,7 +709,7 @@ namespace SCPermissions
 
 		private class ListRanksCommand : ICommandHandler
 		{
-			private SCPermissions plugin;
+			private readonly SCPermissions plugin;
 
 			public ListRanksCommand(SCPermissions plugin)
 			{
@@ -748,7 +748,7 @@ namespace SCPermissions
 
 		private class RemoveTempRankCommand : ICommandHandler
 		{
-			private SCPermissions plugin;
+			private readonly SCPermissions plugin;
 
 			public RemoveTempRankCommand(SCPermissions plugin)
 			{
@@ -776,7 +776,7 @@ namespace SCPermissions
 							return new[] { "You don't have permission to use that command." };
 						}
 
-						if (!plugin.RankIsHigherThan(player.UserId, args[1]))
+						if (!plugin.RankIsHigherThan(player.UserID, args[1]))
 						{
 							return new[] { "You are not allowed to edit players with ranks equal or above your own." };
 						}
@@ -801,7 +801,7 @@ namespace SCPermissions
 
 		private class VerboseCommand : ICommandHandler
 		{
-			private SCPermissions plugin;
+			private readonly SCPermissions plugin;
 
 			public VerboseCommand(SCPermissions plugin)
 			{
@@ -835,7 +835,7 @@ namespace SCPermissions
 
 		private class DebugCommand : ICommandHandler
 		{
-			private SCPermissions plugin;
+			private readonly SCPermissions plugin;
 
 			public DebugCommand(SCPermissions plugin)
 			{
@@ -873,7 +873,7 @@ namespace SCPermissions
 	/// </summary>
 	internal class PlayerJoinHandler : IEventHandlerPlayerJoin
 	{
-		private SCPermissions plugin;
+		private readonly SCPermissions plugin;
 
 		public PlayerJoinHandler(SCPermissions plugin)
 		{
