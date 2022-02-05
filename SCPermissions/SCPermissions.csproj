@@ -79,14 +79,4 @@
     <Content Include="lib\Smod2.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>
-copy /y "SCPermissions.dll" "C:\Program Files (x86)\Steam\steamapps\common\SCP Secret Laboratory Dedicated Server\sm_plugins\"
-
-mkdir "C:\Program Files (x86)\Steam\steamapps\common\SCP Secret Laboratory Dedicated Server\sm_plugins\dependencies"
-
-copy /y "YamlDotNet.dll" "C:\Program Files (x86)\Steam\steamapps\common\SCP Secret Laboratory Dedicated Server\sm_plugins\dependencies\"
-
-copy /y "Newtonsoft.Json.dll" "C:\Program Files (x86)\Steam\steamapps\common\SCP Secret Laboratory Dedicated Server\sm_plugins\dependencies\"</PostBuildEvent>
-  </PropertyGroup>
 </Project>

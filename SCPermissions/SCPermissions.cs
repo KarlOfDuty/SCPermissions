@@ -162,7 +162,7 @@ namespace SCPermissions
 
 			LoadConfig();
 			LoadPlayerData();
-			this.AddEventHandlers(new PlayerJoinHandler(this), Priority.High);
+			this.AddEventHandlers(new PlayerJoinHandler(this), Priority.LATE);
 			this.Info("Special Containment Permissions loaded.");
 		}
 
