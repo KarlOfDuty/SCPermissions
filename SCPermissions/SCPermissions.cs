@@ -191,24 +191,25 @@ namespace SCPermissions
 			}
 
 			// Reads config contents into FileStream
-			FileStream stream = File.OpenRead(FileManager.GetAppFolder(true, !GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml");
-
-			// Converts the FileStream into a YAML Dictionary object
-			IDeserializer deserializer = new DeserializerBuilder().Build();
-			object yamlObject = deserializer.Deserialize(new StreamReader(stream));
-
-			// Converts the YAML Dictionary into JSON String
-			ISerializer serializer = new SerializerBuilder().JsonCompatible().Build();
-			string jsonString = serializer.Serialize(yamlObject);
-
-			JObject json = JObject.Parse(jsonString);
-
-			permissions = (JObject)json.SelectToken("permissions");
-			verbose = json.SelectToken("verbose").Value<bool>();
-			debug = json.SelectToken("debug").Value<bool>();
-			defaultRank = json.SelectToken("defaultRank").Value<string>();
-
-			this.Info("Config \"" + FileManager.GetAppFolder(true, !GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml\" loaded.");
+			using (FileStream stream = File.OpenRead(FileManager.GetAppFolder(true, !GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml"))
+			{
+				// Converts the FileStream into a YAML Dictionary object
+                IDeserializer deserializer = new DeserializerBuilder().Build();
+                object yamlObject = deserializer.Deserialize(new StreamReader(stream));
+    
+                // Converts the YAML Dictionary into JSON String
+                ISerializer serializer = new SerializerBuilder().JsonCompatible().Build();
+                string jsonString = serializer.Serialize(yamlObject);
+    
+                JObject json = JObject.Parse(jsonString);
+    
+                permissions = (JObject)json.SelectToken("permissions");
+                verbose = json.SelectToken("verbose").Value<bool>();
+                debug = json.SelectToken("debug").Value<bool>();
+                defaultRank = json.SelectToken("defaultRank").Value<string>();
+    
+                this.Info("Config \"" + FileManager.GetAppFolder(true, !GetConfigBool("scperms_config_global")) + "SCPermissions/config.yml\" loaded.");
+			}
 		}
 
 		/// <summary>
@@ -226,13 +227,14 @@ namespace SCPermissions
 			}
 
 			// Reads config contents into FileStream
-			FileStream stream = File.OpenRead(FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml");
-
-			// Converts the FileStream into a YAML Dictionary object
-			IDeserializer deserializer = new DeserializerBuilder().Build();
-			playerRankDict = deserializer.Deserialize<Dictionary<string, HashSet<string>>>(new StreamReader(stream)) ?? new Dictionary<string, HashSet<string>>();
-
-			this.Info("Player data \"" + FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml\" loaded.");
+			using (FileStream stream = File.OpenRead(FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml"))
+			{
+				// Converts the FileStream into a YAML Dictionary object
+                IDeserializer deserializer = new DeserializerBuilder().Build();
+                playerRankDict = deserializer.Deserialize<Dictionary<string, HashSet<string>>>(new StreamReader(stream)) ?? new Dictionary<string, HashSet<string>>();
+    
+                this.Info("Player data \"" + FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml\" loaded.");
+			}
 		}
 
 		/// <summary>
@@ -240,15 +242,23 @@ namespace SCPermissions
 		/// </summary>
 		private void SavePlayerData()
 		{
-			StringBuilder builder = new StringBuilder();
-			foreach (KeyValuePair<string, HashSet<string>> playerRanks in playerRankDict)
+			try
 			{
-				if(playerRanks.Value.Count > 0)
+				StringBuilder builder = new StringBuilder();
+				foreach (KeyValuePair<string, HashSet<string>> playerRanks in playerRankDict)
 				{
-					builder.Append(playerRanks.Key + ": [ \"" + string.Join("\", \"", playerRanks.Value) + "\" ]\n");
+					if (playerRanks.Value.Count > 0)
+					{
+						builder.Append(playerRanks.Key + ": [ \"" + string.Join("\", \"", playerRanks.Value) + "\" ]\n");
+					}
 				}
+				File.WriteAllText(FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml", builder.ToString());
 			}
-			File.WriteAllText(FileManager.GetAppFolder(true, !GetConfigBool("scperms_playerdata_global")) + "SCPermissions/playerdata.yml", builder.ToString());
+			catch (Exception e)
+			{
+				this.Error("Exception occured when trying to save player data: " + e);
+			}
+
 		}
 
 		/// <summary>
@@ -406,6 +416,7 @@ namespace SCPermissions
 		{
 			if(player == null)
 			{
+				this.Debug("Not refreshing vanilla rank, player not online.");
 				return;
 			}
 
