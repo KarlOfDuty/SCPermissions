@@ -6,7 +6,7 @@ pipeline {
         sh 'nuget restore SCPermissions.sln'
       }
     }
-    stage('Switch Smod version') {
+    stage('Use upstream Smod') {
         when { triggeredBy 'BuildUpstreamCause' }
         steps {
             sh ('rm SCPermissions/lib/Assembly-CSharp.dll')
