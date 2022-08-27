@@ -6,6 +6,15 @@ pipeline {
         sh 'nuget restore SCPermissions.sln'
       }
     }
+    stage('Switch Smod version') {
+        when { triggeredBy 'BuildUpstreamCause' }
+        steps {
+            sh ('rm SCPermissions/lib/Assembly-CSharp.dll')
+            sh ('rm SCPermissions/lib/Smod2.dll')
+            sh ('ln -s $SCPSL_LIBS/Assembly-CSharp.dll SCPermissions/lib/Assembly-CSharp.dll')
+            sh ('ln -s $SCPSL_LIBS/Smod2.dll SCPermissions/lib/Smod2.dll')
+        }
+    }
     stage('Build') {
       steps {
         sh 'msbuild SCPermissions/SCPermissions.csproj -restore -p:PostBuildEvent='
@@ -25,10 +34,18 @@ pipeline {
       }
     }
     stage('Archive') {
-      steps {
-        sh 'zip -r SCPermissions.zip Plugin'
-        archiveArtifacts(artifacts: 'SCPermissions.zip', onlyIfSuccessful: true)
-      }
+        when { not { triggeredBy 'BuildUpstreamCause' } }
+        steps {
+            sh 'zip -r SCPermissions.zip SCPermissions/*'
+            archiveArtifacts(artifacts: 'SCPermissions.zip', onlyIfSuccessful: true)
+        }
+    }
+    stage('Send upstream') {
+        when { triggeredBy 'BuildUpstreamCause' }
+        steps {
+            sh 'zip -r SCPermissions.zip SCPermissions/*'
+            sh 'cp SCPermissions.zip $PLUGIN_BUILDER_ARTIFACT_DIR'
+        }
     }
   }
 }
