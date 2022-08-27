@@ -36,14 +36,14 @@ pipeline {
     stage('Archive') {
         when { not { triggeredBy 'BuildUpstreamCause' } }
         steps {
-            sh 'zip -r SCPermissions.zip SCPermissions/*'
+            sh 'zip -r SCPermissions.zip Plugin/*'
             archiveArtifacts(artifacts: 'SCPermissions.zip', onlyIfSuccessful: true)
         }
     }
     stage('Send upstream') {
         when { triggeredBy 'BuildUpstreamCause' }
         steps {
-            sh 'zip -r SCPermissions.zip SCPermissions/*'
+            sh 'zip -r SCPermissions.zip Plugin/*'
             sh 'cp SCPermissions.zip $PLUGIN_BUILDER_ARTIFACT_DIR'
         }
     }
